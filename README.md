@@ -1,29 +1,71 @@
-# Syntax Studio
+# Mini Programming Language Compiler
 
-Syntax Studio is a modern web-based multi-language compiler platform developed as part of the Compiler Construction course.
+A compiler front-end for a custom programming language developed for the **Compiler Construction Lab** at **Metropolitan University, Bangladesh**.
 
-## Overview
+The project implements the core stages of a compiler, including lexical analysis, syntax analysis, semantic analysis, Abstract Syntax Tree (AST) construction, symbol table management, and Three Address Code (TAC) generation. A lightweight Django-based web interface is included for interactive code compilation and testing.
 
-The project allows users to write, compile, and execute programs in multiple programming languages through a clean, compiler-inspired web interface.
+## ✨ Features
 
-## Planned Features
+- **Lexical Analysis (Flex):** Tokenizes source code into keywords, identifiers, constants, operators, and delimiters while ignoring comments and whitespace.
+- **Syntax Analysis (Bison):** Validates program structure using a Context-Free Grammar (CFG).
+- **Abstract Syntax Tree (AST):** Builds a hierarchical representation of the parsed program.
+- **Symbol Table & Scope Management:** Supports nested scopes and tracks variable declarations and data types (`int`, `float`, `bool`).
+- **Semantic Analysis:** Detects undeclared variables, redeclarations, and type mismatches.
+- **Three Address Code (TAC):** Generates intermediate code for valid programs.
+- **Django Web Interface:** Provides a browser-based editor to compile source code and display compiler output in real time.
 
-- Multi-language support (C, C++, Java, Python)
-- Syntax-highlighting code editor
-- Code compilation and execution
-- Input and output console
-- Error diagnostics
-- File upload and download
-- Dark and light themes
-- Responsive interface
+## 🛠 Prerequisites
 
-## Technology Stack
+- GCC
+- Flex
+- Bison
+- Make
+- Python 3
+- Django
 
-- Frontend: React.js
-- Backend: Django & Django REST Framework
-- Editor: Monaco Editor
-- Compilers: GCC, G++, OpenJDK, Python
+## 🚀 Build & Run
 
-## Status
+### Compile the Compiler
 
-🚧 Currently under development.
+```bash
+make clean
+make
+```
+
+### Run the Web Interface
+
+```bash
+cd webapp
+python manage.py runserver
+```
+
+Open your browser and visit:
+
+```text
+http://localhost:8000
+```
+
+### Run from the Terminal
+
+```bash
+./my_compiler tests/sample_program.txt
+```
+
+## 📁 Project Structure
+
+```text
+project-root/
+├── src/
+│   ├── lexer/
+│   ├── parser/
+│   ├── ast/
+│   ├── semantic/
+│   └── symbol_table/
+├── webapp/
+├── docs/
+├── tests/
+├── examples/
+├── Makefile
+└── README.md
+```
+
