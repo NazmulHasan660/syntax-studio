@@ -1,0 +1,23 @@
+# ── Flex / Bison generated files ──────────────────────────────────────────────
+lex.yy.c
+parser.tab.c
+parser.tab.h
+parser.output
+
+# ── Compiled object files ──────────────────────────────────────────────────────
+*.o
+*.a
+
+# ── Final binary ───────────────────────────────────────────────────────────────
+compiler
+
+# ── Build artifacts ────────────────────────────────────────────────────────────
+build/
+
+# ── Editor / OS junk ───────────────────────────────────────────────────────────
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
