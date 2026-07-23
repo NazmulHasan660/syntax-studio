@@ -3,20 +3,21 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../ast/ast.h"
 #include "parser.tab.h"
 
 int line_number = 1;
 %}
 
-DIGIT          [0-9]
-LETTER         [a-zA-Z_]
+DIGIT           [0-9]
+LETTER          [a-zA-Z_]
 
-ID             {LETTER}({LETTER}|{DIGIT})*
-INT_CONST      {DIGIT}+
-FLOAT_CONST    {DIGIT}+"."{DIGIT}+
+ID              {LETTER}({LETTER}|{DIGIT})*
+INT_CONST       {DIGIT}+
+FLOAT_CONST     {DIGIT}+"."{DIGIT}+
 
-WHITESPACE     [ \t]+
-NEWLINE        \n
+WHITESPACE      [ \t\r]+
+NEWLINE         \n
 
 %%
 
@@ -61,23 +62,34 @@ NEWLINE        \n
 "{"             { return LBRACE; }
 "}"             { return RBRACE; }
 
-{FLOAT_CONST}   { return FLOAT_CONST; }
-{INT_CONST}     { return INT_CONST; }
+{FLOAT_CONST}   {
+                    yylval.fval = atof(yytext);
+                    return FLOAT_CONST;
+                }
 
-{ID}            { return ID; }
+{INT_CONST}     {
+                    yylval.ival = atoi(yytext);
+                    return INT_CONST;
+                }
+
+{ID}            {
+                    yylval.sval = strdup(yytext);
+                    return ID;
+                }
 
 {WHITESPACE}    { }
 
-{NEWLINE}       { line_number++; }
+{NEWLINE}       {
+                    line_number++;
+                }
 
 "//".*          { }
 
-"/*"([^*]|\*+[^*/])*\*+"/"   { }
-
-. {
-    printf("Lexical Error at line %d: Invalid character '%s'\n",
-           line_number, yytext);
-}
+.               {
+                    printf("Lexical Error at line %d: Invalid character '%c'\n",
+                           line_number,
+                           yytext[0]);
+                }
 
 %%
 

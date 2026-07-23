@@ -13,10 +13,14 @@ LEX_OUT = lex.yy.c
 YACC_OUT_C = parser.tab.c
 YACC_OUT_H = parser.tab.h
 
+SRC = \
+	src/main.c \
+	src/ast/ast.c
+
 all: $(TARGET)
 
-$(TARGET): $(YACC_OUT_C) $(LEX_OUT) src/main.c
-	$(CC) $(CFLAGS) -o $(TARGET) $(YACC_OUT_C) $(LEX_OUT) src/main.c
+$(TARGET): $(YACC_OUT_C) $(LEX_OUT) $(SRC)
+	$(CC) $(CFLAGS) -o $(TARGET) $(YACC_OUT_C) $(LEX_OUT) $(SRC)
 
 $(YACC_OUT_C) $(YACC_OUT_H): $(YACC_SRC)
 	$(YACC) -d $(YACC_SRC)

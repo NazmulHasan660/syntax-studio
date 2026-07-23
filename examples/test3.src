@@ -1,0 +1,20 @@
+float x;
+float y;
+bool ok;
+
+x = 2.5;
+y = 8.5;
+ok = false;
+
+print x;
+
+if (y >= x)
+{
+    x = x + y;
+    print x;
+}
+
+while (x > 0)
+{
+    x = x - 1.5;
+}
