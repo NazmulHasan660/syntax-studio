@@ -109,7 +109,7 @@ Three Address Code (TAC)
 - Nested Blocks `{ ... }`
 - Proper Scope Handling
 - Single-line Comments (`//`)
-- Multi-line Comments (`/* ... */`)
+
 
 ---
 
