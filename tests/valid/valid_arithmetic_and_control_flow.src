@@ -1,0 +1,29 @@
+// Non-trivial valid program: declarations, arithmetic, relational,
+// logical operators, nested if/else inside a while loop, and print.
+// Should compile cleanly all the way through to TAC.
+
+int x;
+int y;
+float avg;
+bool done;
+
+x = 10;
+y = 0;
+done = false;
+
+while (x > 0 && !done) {
+    y = y + x;
+    x = x - 1;
+
+    if (x == 5) {
+        print x;
+    } else {
+        if (x < 2) {
+            done = true;
+        }
+    }
+}
+
+avg = y / 2;
+print y;
+print avg;

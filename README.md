@@ -9,7 +9,7 @@
 
 # Project Goal
 
-Syntax Studio is a mini compiler developed using **Flex** and **Bison**. It implements the front-end of a compiler, including lexical analysis, syntax analysis, abstract syntax tree (AST) construction, semantic analysis, symbol table management, and Three Address Code (TAC) generation.
+Syntax Studio is a mini compiler developed using Flex and Bison. It implements lexical analysis, syntax analysis, abstract syntax tree (AST) construction, symbol table management, semantic analysis, and intermediate code generation using Three Address Code (TAC).
 
 The project follows the compiler design principles taught in the Compiler Construction Lab course.
 

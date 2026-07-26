@@ -1,0 +1,7 @@
+// Semantic error: assigning a bool value to an int variable.
+
+int x;
+bool flag;
+
+flag = true;
+x = flag;

@@ -23,6 +23,7 @@ void symtab_enter_scope(void)
 
     scope->symbols = NULL;
     scope->parent = current_scope;
+    scope->level = (current_scope == NULL) ? 0 : current_scope->level + 1;
 
     current_scope = scope;
 }
@@ -71,6 +72,7 @@ int symtab_insert(const char *name, const char *type, int line)
     sym->name = strdup(name);
     sym->type = strdup(type);
     sym->line = line;
+    sym->scope = current_scope->level;
 
     /* Insert at the head of the current scope's list. */
     sym->next = current_scope->symbols;

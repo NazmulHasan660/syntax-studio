@@ -1,0 +1,5 @@
+// Syntax error: missing semicolon after the assignment.
+
+int x;
+x = 5
+print x;

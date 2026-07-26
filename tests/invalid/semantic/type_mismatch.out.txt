@@ -1,0 +1,23 @@
+Semantic Error at line 7: Type mismatch: cannot assign 'bool' to variable 'x' of type 'int'
+
+====================================
+Parsing Successful
+====================================
+
+Abstract Syntax Tree
+--------------------
+PROGRAM
+    DECLARATION (x : int)
+    DECLARATION (flag : bool)
+    ASSIGNMENT (flag)
+        BOOL (true)
+    ASSIGNMENT (x)
+        IDENTIFIER (flag)
+
+====================================
+Semantic Analysis
+====================================
+
+
+1 semantic error(s) found. Skipping code generation.
+exit code: 1

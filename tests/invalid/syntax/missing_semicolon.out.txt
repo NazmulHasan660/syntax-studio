@@ -1,0 +1,7 @@
+
+=========================================
+Syntax Error at line 5
+syntax error, unexpected PRINT
+=========================================
+1 syntax error(s) found.
+exit code: 1

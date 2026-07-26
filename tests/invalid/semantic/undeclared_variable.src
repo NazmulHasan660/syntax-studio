@@ -1,0 +1,5 @@
+// Semantic error: using 'y' before it has ever been declared.
+
+int x;
+x = 5;
+print y;

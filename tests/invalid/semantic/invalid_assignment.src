@@ -1,0 +1,4 @@
+// Semantic error: assigning to a variable that was never declared.
+
+z = 99;
+print z;

@@ -1,0 +1,16 @@
+Lexical Error at line 4: Invalid character '@'
+
+=========================================
+Syntax Error at line 4
+syntax error, unexpected INT_CONST
+=========================================
+Lexical Error at line 6: Invalid character '#'
+
+=========================================
+Syntax Error at line 6
+syntax error, unexpected ID, expecting ASSIGN
+=========================================
+
+2 lexical error(s) found.
+2 syntax error(s) found.
+exit code: 1

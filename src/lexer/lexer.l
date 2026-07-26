@@ -7,7 +7,10 @@
 #include "parser.tab.h"
 
 int line_number = 1;
+int lexical_error_count = 0;
 %}
+
+%option noinput nounput
 
 DIGIT           [0-9]
 LETTER          [a-zA-Z_]
@@ -86,9 +89,11 @@ NEWLINE         \n
 "//".*          { }
 
 .               {
-                    printf("Lexical Error at line %d: Invalid character '%c'\n",
-                           line_number,
-                           yytext[0]);
+                    fprintf(stderr,
+                            "Lexical Error at line %d: Invalid character '%c'\n",
+                            line_number,
+                            yytext[0]);
+                    lexical_error_count++;
                 }
 
 %%

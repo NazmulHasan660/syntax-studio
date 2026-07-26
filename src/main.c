@@ -9,6 +9,8 @@ extern FILE *yyin;
 extern int yyparse();
 
 extern ASTNode *root;
+extern int lexical_error_count;
+extern int syntax_error_count;
 
 int main(int argc, char *argv[])
 {
@@ -26,7 +28,14 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    if (yyparse() == 0)
+    int exit_status = EXIT_SUCCESS;
+
+    /* yyparse() can return 0 ("accepted") even when syntax errors were
+     * found, because the grammar has basic error recovery (see the
+     * `error SEMICOLON` rule in parser.y): it discards a broken
+     * statement and keeps parsing so later errors are still reported.
+     * So a clean run additionally requires zero counted errors. */
+    if (yyparse() == 0 && lexical_error_count == 0 && syntax_error_count == 0)
     {
         printf("\n====================================\n");
         printf("Parsing Successful\n");
@@ -49,6 +58,7 @@ int main(int argc, char *argv[])
             {
                 printf("\n%d semantic error(s) found. Skipping code generation.\n",
                        errors);
+                exit_status = EXIT_FAILURE;
             }
             else
             {
@@ -64,8 +74,29 @@ int main(int argc, char *argv[])
             free_ast(root);
         }
     }
+    else
+    {
+        /* Syntax and/or lexical errors were already reported to
+         * stderr by yyerror()/the lexer as they were encountered. */
+        exit_status = EXIT_FAILURE;
+
+        if (lexical_error_count > 0)
+        {
+            fprintf(stderr, "\n%d lexical error(s) found.\n", lexical_error_count);
+        }
+
+        if (syntax_error_count > 0)
+        {
+            fprintf(stderr, "%d syntax error(s) found.\n", syntax_error_count);
+        }
+
+        if (root != NULL)
+        {
+            free_ast(root);
+        }
+    }
 
     fclose(yyin);
 
-    return EXIT_SUCCESS;
+    return exit_status;
 }

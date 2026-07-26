@@ -11,6 +11,7 @@ extern int line_number;
 void yyerror(const char *s);
 
 ASTNode *root = NULL;
+int syntax_error_count = 0;
 %}
 
 %code requires {
@@ -61,7 +62,9 @@ ASTNode *root = NULL;
 %left LT GT LE GE
 %left PLUS MINUS
 %left MUL DIV MOD
-%right NOT
+%right NOT UMINUS
+
+%destructor { free($$); } <sval>
 
 %start Program
 
@@ -125,6 +128,16 @@ Statement
     {
         $$ = $1;
     }
+    | error SEMICOLON
+    {
+        /* Basic error recovery: a malformed statement was rejected
+         * (yyerror() already reported it). Discard tokens up to the
+         * next ';' and keep parsing so later errors in the same
+         * file are still found and reported, instead of stopping
+         * at the very first one. */
+        $$ = NULL;
+        yyerrok;
+    }
     ;
  
 
@@ -141,6 +154,7 @@ Declaration
     {
         $$ = create_node(NODE_DECLARATION, $2);
         $$->data_type = $1;
+        free($2); /* create_node() made its own copy */
     }
     ;
 
@@ -164,6 +178,7 @@ Assignment
     {
         $$ = create_node(NODE_ASSIGNMENT, $1);
         $$->left = $3;
+        free($1); /* create_node() made its own copy */
     }
     ;
 
@@ -283,6 +298,11 @@ Expression
         $$ = create_node(NODE_UNARY_OP, "!");
         $$->left = $2;
     }
+    | MINUS Expression %prec UMINUS
+    {
+        $$ = create_node(NODE_UNARY_OP, "-");
+        $$->left = $2;
+    }
     | LPAREN Expression RPAREN
     {
         $$ = $2;
@@ -290,17 +310,18 @@ Expression
     | ID
     {
         $$ = create_node(NODE_IDENTIFIER, $1);
+        free($1); /* create_node() made its own copy */
     }
     | INT_CONST
     {
         char buffer[32];
-        sprintf(buffer, "%d", $1);
+        snprintf(buffer, sizeof(buffer), "%d", $1);
         $$ = create_node(NODE_INT_LITERAL, buffer);
     }
     | FLOAT_CONST
     {
         char buffer[32];
-        sprintf(buffer, "%f", $1);
+        snprintf(buffer, sizeof(buffer), "%g", $1);
         $$ = create_node(NODE_FLOAT_LITERAL, buffer);
     }
     | TRUE
@@ -317,6 +338,8 @@ Expression
 
 void yyerror(const char *s)
 {
+    syntax_error_count++;
+
     fprintf(stderr,
             "\n=========================================\n");
     fprintf(stderr,

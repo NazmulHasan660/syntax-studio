@@ -1,0 +1,4 @@
+// Semantic error: 'x' is declared twice in the same (global) scope.
+
+int x;
+int x;

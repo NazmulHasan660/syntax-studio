@@ -1,0 +1,32 @@
+Semantic Error at line 14: Undeclared variable 'y'
+
+====================================
+Parsing Successful
+====================================
+
+Abstract Syntax Tree
+--------------------
+PROGRAM
+    DECLARATION (x : int)
+    ASSIGNMENT (x)
+        INT (5)
+    IF
+        BINARY OP (>)
+            IDENTIFIER (x)
+            INT (0)
+        BLOCK
+            DECLARATION (y : int)
+            ASSIGNMENT (y)
+                INT (10)
+            PRINT
+                IDENTIFIER (y)
+    PRINT
+        IDENTIFIER (y)
+
+====================================
+Semantic Analysis
+====================================
+
+
+1 semantic error(s) found. Skipping code generation.
+exit code: 1

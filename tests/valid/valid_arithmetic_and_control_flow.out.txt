@@ -1,0 +1,101 @@
+
+====================================
+Parsing Successful
+====================================
+
+Abstract Syntax Tree
+--------------------
+PROGRAM
+    DECLARATION (x : int)
+    DECLARATION (y : int)
+    DECLARATION (avg : float)
+    DECLARATION (done : bool)
+    ASSIGNMENT (x)
+        INT (10)
+    ASSIGNMENT (y)
+        INT (0)
+    ASSIGNMENT (done)
+        BOOL (false)
+    WHILE
+        BINARY OP (&&)
+            BINARY OP (>)
+                IDENTIFIER (x)
+                INT (0)
+            UNARY OP (!)
+                IDENTIFIER (done)
+        BLOCK
+            ASSIGNMENT (y)
+                BINARY OP (+)
+                    IDENTIFIER (y)
+                    IDENTIFIER (x)
+            ASSIGNMENT (x)
+                BINARY OP (-)
+                    IDENTIFIER (x)
+                    INT (1)
+            IF
+                BINARY OP (==)
+                    IDENTIFIER (x)
+                    INT (5)
+                BLOCK
+                    PRINT
+                        IDENTIFIER (x)
+                BLOCK
+                    IF
+                        BINARY OP (<)
+                            IDENTIFIER (x)
+                            INT (2)
+                        BLOCK
+                            ASSIGNMENT (done)
+                                BOOL (true)
+    ASSIGNMENT (avg)
+        BINARY OP (/)
+            IDENTIFIER (y)
+            INT (2)
+    PRINT
+        IDENTIFIER (y)
+    PRINT
+        IDENTIFIER (avg)
+
+====================================
+Semantic Analysis
+====================================
+
+No semantic errors found.
+
+====================================
+Three Address Code
+====================================
+
+    // declare x : int
+    // declare y : int
+    // declare avg : float
+    // declare done : bool
+    x = 10
+    y = 0
+    done = false
+L0:
+    t0 = x > 0
+    t1 = !done
+    t2 = t0 && t1
+    ifFalse t2 goto L1
+    t3 = y + x
+    y = t3
+    t4 = x - 1
+    x = t4
+    t5 = x == 5
+    ifFalse t5 goto L2
+    print x
+    goto L3
+L2:
+    t6 = x < 2
+    ifFalse t6 goto L4
+    done = true
+L4:
+L3:
+    goto L0
+L1:
+    t7 = y / 2
+    avg = t7
+    print y
+    print avg
+exit code: 0

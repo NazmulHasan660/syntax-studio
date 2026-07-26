@@ -1,0 +1,14 @@
+// Semantic error: 'y' is declared inside the if-block and goes out
+// of scope as soon as that block ends, so using it afterwards is
+// an undeclared-variable error caused by a scope violation.
+
+int x;
+x = 5;
+
+if (x > 0) {
+    int y;
+    y = 10;
+    print y;
+}
+
+print y;

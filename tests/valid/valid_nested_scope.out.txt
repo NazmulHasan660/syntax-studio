@@ -1,0 +1,44 @@
+
+====================================
+Parsing Successful
+====================================
+
+Abstract Syntax Tree
+--------------------
+PROGRAM
+    DECLARATION (x : int)
+    ASSIGNMENT (x)
+        INT (1)
+    IF
+        BINARY OP (==)
+            IDENTIFIER (x)
+            INT (1)
+        BLOCK
+            DECLARATION (x : int)
+            ASSIGNMENT (x)
+                INT (99)
+            PRINT
+                IDENTIFIER (x)
+    PRINT
+        IDENTIFIER (x)
+
+====================================
+Semantic Analysis
+====================================
+
+No semantic errors found.
+
+====================================
+Three Address Code
+====================================
+
+    // declare x : int
+    x = 1
+    t0 = x == 1
+    ifFalse t0 goto L0
+    // declare x : int
+    x = 99
+    print x
+L0:
+    print x
+exit code: 0

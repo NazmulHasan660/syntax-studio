@@ -100,24 +100,42 @@ static const char *analyze_expr(ASTNode *expr)
             break;
         }
 
-        case NODE_UNARY_OP: /* only "!" in this language */
+        case NODE_UNARY_OP: /* "!" (logical not) or "-" (unary minus) */
         {
             const char *operand_t = analyze_expr(expr->left);
+            const char *op = expr->text;
 
             if (strcmp(operand_t, "error") == 0)
             {
                 t = "error";
             }
-            else if (strcmp(operand_t, "bool") != 0)
+            else if (strcmp(op, "!") == 0)
             {
-                semantic_error(expr->line,
-                                "Operator '!' requires a bool operand, got '%s'",
-                                operand_t);
-                t = "error";
+                if (strcmp(operand_t, "bool") != 0)
+                {
+                    semantic_error(expr->line,
+                                    "Operator '!' requires a bool operand, got '%s'",
+                                    operand_t);
+                    t = "error";
+                }
+                else
+                {
+                    t = "bool";
+                }
             }
-            else
+            else /* unary "-" */
             {
-                t = "bool";
+                if (!is_numeric(operand_t))
+                {
+                    semantic_error(expr->line,
+                                    "Unary '-' requires a numeric operand, got '%s'",
+                                    operand_t);
+                    t = "error";
+                }
+                else
+                {
+                    t = operand_t; /* -int -> int, -float -> float */
+                }
             }
 
             break;

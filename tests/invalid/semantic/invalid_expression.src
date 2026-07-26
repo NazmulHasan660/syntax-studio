@@ -1,0 +1,8 @@
+// Semantic error: '&&' (logical AND) requires bool operands, but
+// here it is applied to an int operand.
+
+int x;
+bool b;
+
+x = 5;
+b = x && true;

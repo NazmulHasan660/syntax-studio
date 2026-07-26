@@ -1,0 +1,12 @@
+
+=========================================
+Syntax Error at line 7
+syntax error, unexpected PRINT
+=========================================
+
+=========================================
+Syntax Error at line 10
+syntax error, unexpected ID, expecting SEMICOLON
+=========================================
+2 syntax error(s) found.
+exit code: 1

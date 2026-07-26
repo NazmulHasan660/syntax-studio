@@ -1,0 +1,15 @@
+// Valid program specifically exercising nested-scope handling:
+// an inner block redeclares a name already used in an outer scope.
+// This must NOT be flagged as a redeclaration error, since they
+// live in different scopes.
+
+int x;
+x = 1;
+
+if (x == 1) {
+    int x;
+    x = 99;
+    print x;
+}
+
+print x;

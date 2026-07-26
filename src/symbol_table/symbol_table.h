@@ -9,6 +9,7 @@ typedef struct Symbol
     char *name;
     char *type;   /* "int" / "float" / "bool" */
     int line;     /* line of declaration */
+    int scope;    /* nesting depth: 0 = global, 1 = one block deep, ... */
 
     struct Symbol *next; /* next symbol in the same scope */
 } Symbol;
@@ -21,6 +22,7 @@ typedef struct Symbol
 typedef struct Scope
 {
     Symbol *symbols;
+    int level;            /* 0 = global scope, increases with nesting */
     struct Scope *parent;
 } Scope;
 

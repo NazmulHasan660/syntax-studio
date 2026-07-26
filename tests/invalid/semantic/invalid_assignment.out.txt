@@ -1,0 +1,22 @@
+Semantic Error at line 3: Assignment to undeclared variable 'z'
+Semantic Error at line 4: Undeclared variable 'z'
+
+====================================
+Parsing Successful
+====================================
+
+Abstract Syntax Tree
+--------------------
+PROGRAM
+    ASSIGNMENT (z)
+        INT (99)
+    PRINT
+        IDENTIFIER (z)
+
+====================================
+Semantic Analysis
+====================================
+
+
+2 semantic error(s) found. Skipping code generation.
+exit code: 1

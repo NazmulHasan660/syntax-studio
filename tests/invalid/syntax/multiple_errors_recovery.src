@@ -1,0 +1,11 @@
+// Demonstrates basic error recovery: TWO separate syntax errors
+// in the same file. The parser should report BOTH (line 5 and
+// line 9), not just stop after the first one.
+
+int x;
+x = 5
+print x;
+
+int y
+y = 10;
+print y;
