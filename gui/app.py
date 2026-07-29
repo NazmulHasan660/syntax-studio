@@ -84,21 +84,45 @@ def measure(font, text):
     return f.measure(text), f.metrics("linespace")
 
 
+def draw_icon(c, kind, x, y, color):
+    """Small monochrome toolbar icons; keeps the UI asset-free."""
+    line = dict(fill=color, width=2.2, capstyle=tk.ROUND, joinstyle=tk.ROUND)
+    if kind == "folder":
+        c.create_line(x-9, y-7, x-3, y-7, x, y-4, x+9, y-4,
+                      x+9, y+8, x-9, y+8, x-9, y-7, **line)
+    elif kind == "save":
+        c.create_rectangle(x-8, y-9, x+8, y+9, outline=color, width=2.2)
+        c.create_rectangle(x-4, y-9, x+4, y-3, outline=color, width=1.8)
+        c.create_rectangle(x-5, y+2, x+5, y+9, outline=color, width=1.8)
+    elif kind == "eraser":
+        c.create_polygon(x-9, y+2, x+2, y-9, x+4, y-9, x+9, y-4,
+                         x+9, y-2, x-2, y+9, x-5, y+9, x-9, y+5,
+                         fill="", outline=color, width=2, joinstyle=tk.ROUND)
+        c.create_line(x-6, y-1, x+1, y+6, fill=color, width=2, capstyle=tk.ROUND)
+        c.create_line(x-3, y+9, x+10, y+9, fill=color, width=2, capstyle=tk.ROUND)
+
+
 class RoundedButton(tk.Canvas):
     """Flat rounded-corner button (ttk can't do true rounded corners)."""
 
     def __init__(self, parent, text, command=None, *, radius=8, bg=None, fg="white",
-                 border_color=None, border_width=0, font=UI, padx=14, pady=7):
+                 border_color=None, border_width=0, font=UI, padx=14, pady=7, icon=None):
         bg = bg or ACCENT
         super().__init__(parent, highlightthickness=0, bd=0, bg=BG)
         self.command, self.radius = command, radius
         self.colors = {"n": bg, "h": shade(bg, 1.08), "p": shade(bg, 0.85)}
         tw, th = measure(font, text)
-        w, h = tw + padx * 2, th + pady * 2
+        extra = 30 if icon else 0
+        w, h = tw + padx * 2 + extra, th + pady * 2
         self.configure(width=w, height=h)
         self.shape = round_rect(self, 1, 1, w - 1, h - 1, radius, fill=bg,
                                  outline=border_color or "", width=border_width)
-        self.create_text(w / 2, h / 2, text=text, fill=fg, font=font)
+        if icon:
+            start = (w - tw - extra) / 2
+            draw_icon(self, icon, start + 10, h / 2, fg)
+            self.create_text(start + extra, h / 2, text=text, fill=fg, font=font, anchor="w")
+        else:
+            self.create_text(w / 2, h / 2, text=text, fill=fg, font=font)
         self.bind("<Enter>", lambda e: (self.itemconfig(self.shape, fill=self.colors["h"]),
                                          self.configure(cursor="hand2")))
         self.bind("<Leave>", lambda e: self.itemconfig(self.shape, fill=self.colors["n"]))
@@ -208,14 +232,15 @@ class SyntaxStudioApp(tk.Tk):
         inner = tk.Frame(bar, bg=WHITE)
         inner.pack(fill=tk.X, padx=10, pady=8)
 
-        sec = dict(bg=WHITE, fg="#333333", border_color="#d5d8dd", border_width=1, radius=8)
-        pri = dict(bg=ACCENT, fg="white", radius=8, font=(UI[0], 10, "bold"))
+        sec = dict(bg=WHITE, fg="#202124", border_color="#d5d8dd", border_width=1,
+                   radius=8, padx=14, pady=10)
+        pri = dict(bg=ACCENT, fg="white", radius=8, font=(UI[0], 10, "bold"), pady=10)
 
-        RoundedButton(inner, "\U0001F4C1 Load File", command=self.load_file, **sec).pack(side=tk.LEFT, padx=(0, 6))
-        RoundedButton(inner, "\U0001F4BE Save", command=self.save_file, **sec).pack(side=tk.LEFT, padx=(0, 6))
+        RoundedButton(inner, "Load File", icon="folder", command=self.load_file, **sec).pack(side=tk.LEFT, padx=(0, 6))
+        RoundedButton(inner, "Save", icon="save", command=self.save_file, **sec).pack(side=tk.LEFT, padx=(0, 6))
         RoundedButton(inner, "\u25B6 Run Compiler  (Ctrl+Enter)", command=self.run_compiler, **pri).pack(
             side=tk.LEFT, padx=(0, 6))
-        RoundedButton(inner, "\U0001F9F9 Clear", command=self.clear_all, **sec).pack(side=tk.LEFT, padx=(0, 14))
+        RoundedButton(inner, "Clear", icon="eraser", command=self.clear_all, **sec).pack(side=tk.LEFT, padx=(0, 14))
 
         info = tk.Frame(inner, bg=WHITE)
         info.pack(side=tk.LEFT)

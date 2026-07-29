@@ -1,0 +1,19 @@
+// Sample program -- edit this or load your own .src file.
+int x;
+int y;
+bool flag;
+
+x = 10;
+y = 0;
+flag = true;
+
+while (x > 0 && flag) {
+    y = y + x;
+    x = x - 1;
+
+    if (x == 3) {
+        flag = false;
+    }
+}
+
+print y;
