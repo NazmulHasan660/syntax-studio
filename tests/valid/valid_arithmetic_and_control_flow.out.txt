@@ -1,10 +1,101 @@
 
-====================================
-Parsing Successful
-====================================
+===== Lexical Analysis =====
+Language: Mini/C
+Line  Token                 Lexeme
+------------------------------------------------------------
+[005] TOKEN: INT                  LEXEME: 'int'
+[005] TOKEN: ID                   LEXEME: 'x'
+[005] TOKEN: SEMICOLON            LEXEME: ';'
+[006] TOKEN: INT                  LEXEME: 'int'
+[006] TOKEN: ID                   LEXEME: 'y'
+[006] TOKEN: SEMICOLON            LEXEME: ';'
+[007] TOKEN: FLOAT                LEXEME: 'float'
+[007] TOKEN: ID                   LEXEME: 'avg'
+[007] TOKEN: SEMICOLON            LEXEME: ';'
+[008] TOKEN: BOOL                 LEXEME: 'bool'
+[008] TOKEN: ID                   LEXEME: 'done'
+[008] TOKEN: SEMICOLON            LEXEME: ';'
+[010] TOKEN: ID                   LEXEME: 'x'
+[010] TOKEN: ASSIGN               LEXEME: '='
+[010] TOKEN: INT_CONST            LEXEME: '10'
+[010] TOKEN: SEMICOLON            LEXEME: ';'
+[011] TOKEN: ID                   LEXEME: 'y'
+[011] TOKEN: ASSIGN               LEXEME: '='
+[011] TOKEN: INT_CONST            LEXEME: '0'
+[011] TOKEN: SEMICOLON            LEXEME: ';'
+[012] TOKEN: ID                   LEXEME: 'done'
+[012] TOKEN: ASSIGN               LEXEME: '='
+[012] TOKEN: FALSE                LEXEME: 'false'
+[012] TOKEN: SEMICOLON            LEXEME: ';'
+[014] TOKEN: WHILE                LEXEME: 'while'
+[014] TOKEN: LPAREN               LEXEME: '('
+[014] TOKEN: ID                   LEXEME: 'x'
+[014] TOKEN: GT                   LEXEME: '>'
+[014] TOKEN: INT_CONST            LEXEME: '0'
+[014] TOKEN: AND                  LEXEME: '&&'
+[014] TOKEN: NOT                  LEXEME: '!'
+[014] TOKEN: ID                   LEXEME: 'done'
+[014] TOKEN: RPAREN               LEXEME: ')'
+[014] TOKEN: LBRACE               LEXEME: '{'
+[015] TOKEN: ID                   LEXEME: 'y'
+[015] TOKEN: ASSIGN               LEXEME: '='
+[015] TOKEN: ID                   LEXEME: 'y'
+[015] TOKEN: PLUS                 LEXEME: '+'
+[015] TOKEN: ID                   LEXEME: 'x'
+[015] TOKEN: SEMICOLON            LEXEME: ';'
+[016] TOKEN: ID                   LEXEME: 'x'
+[016] TOKEN: ASSIGN               LEXEME: '='
+[016] TOKEN: ID                   LEXEME: 'x'
+[016] TOKEN: MINUS                LEXEME: '-'
+[016] TOKEN: INT_CONST            LEXEME: '1'
+[016] TOKEN: SEMICOLON            LEXEME: ';'
+[018] TOKEN: IF                   LEXEME: 'if'
+[018] TOKEN: LPAREN               LEXEME: '('
+[018] TOKEN: ID                   LEXEME: 'x'
+[018] TOKEN: EQ                   LEXEME: '=='
+[018] TOKEN: INT_CONST            LEXEME: '5'
+[018] TOKEN: RPAREN               LEXEME: ')'
+[018] TOKEN: LBRACE               LEXEME: '{'
+[019] TOKEN: PRINT                LEXEME: 'print'
+[019] TOKEN: ID                   LEXEME: 'x'
+[019] TOKEN: SEMICOLON            LEXEME: ';'
+[020] TOKEN: RBRACE               LEXEME: '}'
+[020] TOKEN: ELSE                 LEXEME: 'else'
+[020] TOKEN: LBRACE               LEXEME: '{'
+[021] TOKEN: IF                   LEXEME: 'if'
+[021] TOKEN: LPAREN               LEXEME: '('
+[021] TOKEN: ID                   LEXEME: 'x'
+[021] TOKEN: LT                   LEXEME: '<'
+[021] TOKEN: INT_CONST            LEXEME: '2'
+[021] TOKEN: RPAREN               LEXEME: ')'
+[021] TOKEN: LBRACE               LEXEME: '{'
+[022] TOKEN: ID                   LEXEME: 'done'
+[022] TOKEN: ASSIGN               LEXEME: '='
+[022] TOKEN: TRUE                 LEXEME: 'true'
+[022] TOKEN: SEMICOLON            LEXEME: ';'
+[023] TOKEN: RBRACE               LEXEME: '}'
+[024] TOKEN: RBRACE               LEXEME: '}'
+[025] TOKEN: RBRACE               LEXEME: '}'
+[027] TOKEN: ID                   LEXEME: 'avg'
+[027] TOKEN: ASSIGN               LEXEME: '='
+[027] TOKEN: ID                   LEXEME: 'y'
+[027] TOKEN: DIV                  LEXEME: '/'
+[027] TOKEN: INT_CONST            LEXEME: '2'
+[027] TOKEN: SEMICOLON            LEXEME: ';'
+[028] TOKEN: PRINT                LEXEME: 'print'
+[028] TOKEN: ID                   LEXEME: 'y'
+[028] TOKEN: SEMICOLON            LEXEME: ';'
+[029] TOKEN: PRINT                LEXEME: 'print'
+[029] TOKEN: ID                   LEXEME: 'avg'
+[029] TOKEN: SEMICOLON            LEXEME: ';'
+------------------------------------------------------------
+Total parser tokens: 85
+Lexical Analysis: SUCCESS (no lexical errors)
 
-Abstract Syntax Tree
---------------------
+===== Parsing =====
+Parsing successful.
+
+===== Abstract Syntax Tree =====
 PROGRAM
     DECLARATION (x : int)
     DECLARATION (y : int)
@@ -56,16 +147,18 @@ PROGRAM
     PRINT
         IDENTIFIER (avg)
 
-====================================
-Semantic Analysis
-====================================
+===== Semantic Analysis =====
+Semantic analysis successful. No errors found.
 
-No semantic errors found.
+===== Symbol Table =====
+Name            Type       Scope      Line      
+--------------------------------------------------
+x               int        0          5         
+y               int        0          6         
+avg             float      0          7         
+done            bool       0          8         
 
-====================================
-Three Address Code
-====================================
-
+===== Three Address Code (TAC) =====
     // declare x : int
     // declare y : int
     // declare avg : float

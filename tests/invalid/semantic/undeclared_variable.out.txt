@@ -1,11 +1,27 @@
 Semantic Error at line 5: Undeclared variable 'y'
 
-====================================
-Parsing Successful
-====================================
+===== Lexical Analysis =====
+Language: Mini/C
+Line  Token                 Lexeme
+------------------------------------------------------------
+[003] TOKEN: INT                  LEXEME: 'int'
+[003] TOKEN: ID                   LEXEME: 'x'
+[003] TOKEN: SEMICOLON            LEXEME: ';'
+[004] TOKEN: ID                   LEXEME: 'x'
+[004] TOKEN: ASSIGN               LEXEME: '='
+[004] TOKEN: INT_CONST            LEXEME: '5'
+[004] TOKEN: SEMICOLON            LEXEME: ';'
+[005] TOKEN: PRINT                LEXEME: 'print'
+[005] TOKEN: ID                   LEXEME: 'y'
+[005] TOKEN: SEMICOLON            LEXEME: ';'
+------------------------------------------------------------
+Total parser tokens: 10
+Lexical Analysis: SUCCESS (no lexical errors)
 
-Abstract Syntax Tree
---------------------
+===== Parsing =====
+Parsing successful.
+
+===== Abstract Syntax Tree =====
 PROGRAM
     DECLARATION (x : int)
     ASSIGNMENT (x)
@@ -13,10 +29,15 @@ PROGRAM
     PRINT
         IDENTIFIER (y)
 
-====================================
-Semantic Analysis
-====================================
+===== Semantic Analysis =====
+Semantic Analysis: FAILED (1 error(s))
 
+===== Symbol Table =====
+Name            Type       Scope      Line      
+--------------------------------------------------
+x               int        0          3         
 
-1 semantic error(s) found. Skipping code generation.
+===== Three Address Code (TAC) =====
+Status: NOT GENERATED
+Reason: Semantic analysis failed with 1 error(s).
 exit code: 1

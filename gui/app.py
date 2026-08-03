@@ -2,385 +2,342 @@
 """
 app.py -- Syntax Studio GUI.
 
-Run from the project root (compiler must already be built with `make`):
+Run from the project root:
     python3 gui/app.py
 """
-
 import os
 import re
 import tkinter as tk
 import tkinter.font as tkfont
 from tkinter import ttk, filedialog, messagebox
-
 import compiler_runner as cr
-
 MAX_UPLOAD_BYTES = 10 * 1024
-ALLOWED_EXTENSIONS = (".src", ".c", ".txt")
+ALLOWED_EXTENSIONS = ('.src', '.c', '.cpp', '.cc', '.cxx', '.java', '.txt')
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-COMPILER_PATH = os.path.join(PROJECT_ROOT, "compiler")
+COMPILER_PATH = os.path.join(PROJECT_ROOT, 'compiler')
+MONO = ('Consolas', 12)
+MONO_SM = ('Consolas', 10)
+UI = ('Segoe UI', 10)
+PILL_FONT = ('Segoe UI', 9, 'bold')
+BG = '#f7f8fa'
+WHITE = '#ffffff'
+BORDER = '#e3e5e8'
+ACCENT = '#2f6fed'
+KEYWORD = '#6c5ce7'
+COMMENT = '#6a9955'
+NUMBER = '#b5760c'
+CURLINE = '#eef4ff'
+ERRLINE = '#ffe0e0'
+GREEN = '#16a34a'
+RED = '#dc2626'
+GRAY = '#9aa0a6'
+KEYWORDS = ('int', 'float', 'double', 'bool', 'boolean', 'public', 'private', 'protected', 'static', 'if', 'else', 'while', 'for', 'do', 'return', 'print', 'cout', 'true', 'false')
+KEYWORD_RE = re.compile('\\b(?:' + '|'.join(KEYWORDS) + ')\\b')
+COMMENT_RE = re.compile('//[^\\n]*')
+NUMBER_RE = re.compile('\\b\\d+(?:\\.\\d+)?\\b')
+ERR_RE = re.compile('(Lexical|Syntax|Semantic) Error at line (\\d+):?\\s*(.*)')
+SAMPLES = {'C': '#include <stdio.h>\n\nint x = 10;\nint y = 20;\nint total = x + y;\n\nprintf(total);\n', 'C++': '#include <iostream>\nusing namespace std;\n\nint score = 75;\nbool passed = score >= 50;\n\nif (passed) {\n    cout << score;\n}\n', 'Java': 'int x = 10;\nint y = 20;\nint total = x + y;\n\nSystem.out.println(total);\n'}
 
-MONO = ("Consolas", 12)
-MONO_SM = ("Consolas", 10)
-UI = ("Segoe UI", 10)
-PILL_FONT = ("Segoe UI", 9, "bold")
+def round_rect(canvas, x1, y1, x2, y2, radius, **options):
+    points = [x1 + radius, y1, x2 - radius, y1, x2, y1, x2, y1 + radius, x2, y2 - radius, x2, y2, x2 - radius, y2, x1 + radius, y2, x1, y2, x1, y2 - radius, x1, y1 + radius, x1, y1]
+    return canvas.create_polygon(points, smooth=True, **options)
 
-BG = "#f7f8fa"
-WHITE = "#ffffff"
-BORDER = "#e3e5e8"
-ACCENT = "#2f6fed"
-KEYWORD = "#6c5ce7"
-COMMENT = "#6a9955"
-NUMBER = "#b5760c"
-CURLINE = "#eef4ff"
-ERRLINE = "#ffe0e0"
-GREEN, RED, GRAY = "#16a34a", "#dc2626", "#9aa0a6"
-
-KEYWORDS = ("int", "float", "bool", "if", "else", "while", "print", "true", "false")
-KEYWORD_RE = re.compile(r"\b(?:" + "|".join(KEYWORDS) + r")\b")
-COMMENT_RE = re.compile(r"//[^\n]*")
-NUMBER_RE = re.compile(r"\b\d+(?:\.\d+)?\b")
-ERR_RE = re.compile(r"(Lexical|Semantic) Error at line (\d+): (.*)")
-SYNTAX_RE = re.compile(r"Syntax Error at line (\d+)")
-
-SAMPLE = """// Sample program -- edit this or load your own .src file.
-int x;
-int y;
-bool flag;
-
-x = 10;
-y = 0;
-flag = true;
-
-while (x > 0 && flag) {
-    y = y + x;
-    x = x - 1;
-
-    if (x == 3) {
-        flag = false;
-    }
-}
-
-print y;
-"""
-
-
-def round_rect(c, x1, y1, x2, y2, r, **kw):
-    pts = [x1 + r, y1, x2 - r, y1, x2, y1, x2, y1 + r, x2, y2 - r, x2, y2,
-           x2 - r, y2, x1 + r, y2, x1, y2, x1, y2 - r, x1, y1 + r, x1, y1]
-    return c.create_polygon(pts, smooth=True, **kw)
-
-
-def shade(hexcolor, factor):
-    h = hexcolor.lstrip("#")
-    r, g, b = (min(255, max(0, int(int(h[i:i + 2], 16) * factor))) for i in (0, 2, 4))
-    return "#{:02x}{:02x}{:02x}".format(r, g, b)
-
+def shade(hex_color, factor):
+    color = hex_color.lstrip('#')
+    red, green, blue = (min(255, max(0, int(int(color[index:index + 2], 16) * factor))) for index in (0, 2, 4))
+    return '#{:02x}{:02x}{:02x}'.format(red, green, blue)
 
 def measure(font, text):
-    """Text width/line-height via Tk's own font system -- reliable across
-    platforms and display-scaling settings, unlike measuring an unmapped
-    Canvas item's bbox()."""
-    f = tkfont.Font(font=font)
-    return f.measure(text), f.metrics("linespace")
+    tkinter_font = tkfont.Font(font=font)
+    return (tkinter_font.measure(text), tkinter_font.metrics('linespace'))
 
-
-def draw_icon(c, kind, x, y, color):
-    """Small monochrome toolbar icons; keeps the UI asset-free."""
-    line = dict(fill=color, width=2.2, capstyle=tk.ROUND, joinstyle=tk.ROUND)
-    if kind == "folder":
-        c.create_line(x-9, y-7, x-3, y-7, x, y-4, x+9, y-4,
-                      x+9, y+8, x-9, y+8, x-9, y-7, **line)
-    elif kind == "save":
-        c.create_rectangle(x-8, y-9, x+8, y+9, outline=color, width=2.2)
-        c.create_rectangle(x-4, y-9, x+4, y-3, outline=color, width=1.8)
-        c.create_rectangle(x-5, y+2, x+5, y+9, outline=color, width=1.8)
-    elif kind == "eraser":
-        c.create_polygon(x-9, y+2, x+2, y-9, x+4, y-9, x+9, y-4,
-                         x+9, y-2, x-2, y+9, x-5, y+9, x-9, y+5,
-                         fill="", outline=color, width=2, joinstyle=tk.ROUND)
-        c.create_line(x-6, y-1, x+1, y+6, fill=color, width=2, capstyle=tk.ROUND)
-        c.create_line(x-3, y+9, x+10, y+9, fill=color, width=2, capstyle=tk.ROUND)
-
-
-class RoundedButton(tk.Canvas):
-    """Flat rounded-corner button (ttk can't do true rounded corners)."""
-
-    def __init__(self, parent, text, command=None, *, radius=8, bg=None, fg="white",
-                 border_color=None, border_width=0, font=UI, padx=14, pady=7, icon=None):
-        bg = bg or ACCENT
-        super().__init__(parent, highlightthickness=0, bd=0, bg=BG)
-        self.command, self.radius = command, radius
-        self.colors = {"n": bg, "h": shade(bg, 1.08), "p": shade(bg, 0.85)}
-        tw, th = measure(font, text)
-        extra = 30 if icon else 0
-        w, h = tw + padx * 2 + extra, th + pady * 2
-        self.configure(width=w, height=h)
-        self.shape = round_rect(self, 1, 1, w - 1, h - 1, radius, fill=bg,
-                                 outline=border_color or "", width=border_width)
-        if icon:
-            start = (w - tw - extra) / 2
-            draw_icon(self, icon, start + 10, h / 2, fg)
-            self.create_text(start + extra, h / 2, text=text, fill=fg, font=font, anchor="w")
-        else:
-            self.create_text(w / 2, h / 2, text=text, fill=fg, font=font)
-        self.bind("<Enter>", lambda e: (self.itemconfig(self.shape, fill=self.colors["h"]),
-                                         self.configure(cursor="hand2")))
-        self.bind("<Leave>", lambda e: self.itemconfig(self.shape, fill=self.colors["n"]))
-        self.bind("<ButtonPress-1>", lambda e: self.itemconfig(self.shape, fill=self.colors["p"]))
-        self.bind("<ButtonRelease-1>", self._release)
-
-    def _release(self, event):
-        self.itemconfig(self.shape, fill=self.colors["h"])
-        if 0 <= event.x <= int(self["width"]) and 0 <= event.y <= int(self["height"]) and self.command:
-            self.command()
-
+def draw_icon(canvas, icon_type, x, y, color):
+    line_options = {'fill': color, 'width': 2.2, 'capstyle': tk.ROUND, 'joinstyle': tk.ROUND}
+    if icon_type == 'folder':
+        canvas.create_line(x - 9, y - 7, x - 3, y - 7, x, y - 4, x + 9, y - 4, x + 9, y + 8, x - 9, y + 8, x - 9, y - 7, **line_options)
+    elif icon_type == 'save':
+        canvas.create_rectangle(x - 8, y - 9, x + 8, y + 9, outline=color, width=2.2)
+        canvas.create_rectangle(x - 4, y - 9, x + 4, y - 3, outline=color, width=1.8)
+        canvas.create_rectangle(x - 5, y + 2, x + 5, y + 9, outline=color, width=1.8)
+    elif icon_type == 'eraser':
+        canvas.create_polygon(x - 9, y + 2, x + 2, y - 9, x + 4, y - 9, x + 9, y - 4, x + 9, y - 2, x - 2, y + 9, x - 5, y + 9, x - 9, y + 5, fill='', outline=color, width=2, joinstyle=tk.ROUND)
+        canvas.create_line(x - 6, y - 1, x + 1, y + 6, fill=color, width=2, capstyle=tk.ROUND)
+        canvas.create_line(x - 3, y + 9, x + 10, y + 9, fill=color, width=2, capstyle=tk.ROUND)
 
 def make_pill(parent, text, status):
-    bg, fg = {"ok": ("#e8f9ee", GREEN), "fail": ("#fdecea", RED), "skip": ("#f1f2f4", GRAY)}[status]
-    icon = {"ok": "\u2713", "fail": "\u2715", "skip": "\u2013"}[status]
-    label = f"{text}  {icon}"
-    tw, th = measure(PILL_FONT, label)
-    w, h = tw + 22, th + 12
-    c = tk.Canvas(parent, highlightthickness=0, bd=0, bg=BG, width=w, height=h)
-    round_rect(c, 1, 1, w - 1, h - 1, h / 2, fill=bg, outline="")
-    c.create_text(w / 2, h / 2, text=label, fill=fg, font=PILL_FONT)
-    return c
+    colors = {'ok': ('#e8f9ee', GREEN), 'fail': ('#fdecea', RED), 'skip': ('#f1f2f4', GRAY)}
+    icons = {'ok': '✓', 'fail': '✕', 'skip': '–'}
+    background, foreground = colors[status]
+    label = '{}  {}'.format(text, icons[status])
+    text_width, text_height = measure(PILL_FONT, label)
+    width, height = (text_width + 22, text_height + 12)
+    canvas = tk.Canvas(parent, highlightthickness=0, bd=0, bg=BG, width=width, height=height)
+    round_rect(canvas, 1, 1, width - 1, height - 1, height / 2, fill=background, outline='')
+    canvas.create_text(width / 2, height / 2, text=label, fill=foreground, font=PILL_FONT)
+    return canvas
 
+def make_connector(parent):
+    canvas = tk.Canvas(parent, width=22, height=18, highlightthickness=0, bd=0, bg=BG)
+    canvas.create_line(0, 9, 22, 9, fill='#c7cad1', dash=(3, 2))
+    return canvas
 
-def make_connector(parent, w=22):
-    c = tk.Canvas(parent, width=w, height=18, highlightthickness=0, bd=0, bg=BG)
-    c.create_line(0, 9, w, 9, fill="#c7cad1", dash=(3, 2))
-    return c
+class RoundedButton(tk.Canvas):
 
+    def __init__(self, parent, text, command=None, *, radius=8, bg=None, fg='white', border_color=None, border_width=0, font=UI, padx=14, pady=7, icon=None):
+        background = bg or ACCENT
+        super().__init__(parent, highlightthickness=0, bd=0, bg=BG)
+        self.command = command
+        self.radius = radius
+        self.colors = {'normal': background, 'hover': shade(background, 1.08), 'pressed': shade(background, 0.85)}
+        text_width, text_height = measure(font, text)
+        extra_width = 30 if icon else 0
+        width = text_width + padx * 2 + extra_width
+        height = text_height + pady * 2
+        self.configure(width=width, height=height)
+        self.shape = round_rect(self, 1, 1, width - 1, height - 1, radius, fill=background, outline=border_color or '', width=border_width)
+        if icon:
+            start = (width - text_width - extra_width) / 2
+            draw_icon(self, icon, start + 10, height / 2, fg)
+            self.create_text(start + extra_width, height / 2, text=text, fill=fg, font=font, anchor='w')
+        else:
+            self.create_text(width / 2, height / 2, text=text, fill=fg, font=font)
+        self.bind('<Enter>', self._on_enter)
+        self.bind('<Leave>', self._on_leave)
+        self.bind('<ButtonPress-1>', self._on_press)
+        self.bind('<ButtonRelease-1>', self._on_release)
+
+    def _on_enter(self, _event):
+        self.itemconfig(self.shape, fill=self.colors['hover'])
+        self.configure(cursor='hand2')
+
+    def _on_leave(self, _event):
+        self.itemconfig(self.shape, fill=self.colors['normal'])
+
+    def _on_press(self, _event):
+        self.itemconfig(self.shape, fill=self.colors['pressed'])
+
+    def _on_release(self, event):
+        self.itemconfig(self.shape, fill=self.colors['hover'])
+        inside_button = 0 <= event.x <= int(self['width']) and 0 <= event.y <= int(self['height'])
+        if inside_button and self.command:
+            self.command()
 
 class SyntaxStudioApp(tk.Tk):
+
     def __init__(self):
         super().__init__()
-        self.title("Syntax Studio")
-        self.geometry("1300x860")
+        self.title('Syntax Studio')
+        self.geometry('1300x860')
         self.minsize(1100, 700)
         self.configure(bg=BG)
-
         self.current_path = None
         self.is_dirty = False
-
-        style = ttk.Style(self)
-        try:
-            style.theme_use("clam")
-        except tk.TclError:
-            pass
-        style.configure("TNotebook", background=BG, borderwidth=0)
-        style.configure("TNotebook.Tab", padding=(14, 6), font=UI)
-        style.configure("Treeview", rowheight=22, font=MONO_SM, fieldbackground=WHITE)
-        style.configure("Treeview.Heading", font=(UI[0], 9, "bold"))
-        style.configure("TPanedwindow", background=BG)
-        style.configure("TFrame", background=BG)
-
+        self.language_var = tk.StringVar(value='C++')
+        self._configure_styles()
         self._build_menu()
         self._build_toolbar()
-        self.update_idletasks()
         self._build_pipeline()
-        self.update_idletasks()
         self._build_body()
+        self._refresh_pipeline(['skip'] * 6)
         self._build_statusbar()
         self._bind_shortcuts()
-
-        self.editor.insert("1.0", SAMPLE)
+        self.editor.insert('1.0', SAMPLES[self.language_var.get()])
         self._on_editor_change()
 
-    # ---------------- menu / toolbar / pipeline ----------------
+    def _configure_styles(self):
+        style = ttk.Style(self)
+        try:
+            style.theme_use('clam')
+        except tk.TclError:
+            pass
+        style.configure('TNotebook', background=BG, borderwidth=0)
+        style.configure('TNotebook.Tab', padding=(14, 6), font=UI)
+        style.configure('Treeview', rowheight=22, font=MONO_SM, fieldbackground=WHITE)
+        style.configure('Treeview.Heading', font=(UI[0], 9, 'bold'))
+        style.configure('TPanedwindow', background=BG)
+        style.configure('TFrame', background=BG)
+
     def _build_menu(self):
-        m = tk.Menu(self)
-        f = tk.Menu(m, tearoff=0)
-        f.add_command(label="Open...", accelerator="Ctrl+O", command=self.load_file)
-        f.add_command(label="Save", accelerator="Ctrl+S", command=self.save_file)
-        f.add_command(label="Save As...", accelerator="Ctrl+Shift+S", command=self.save_file_as)
-        f.add_separator()
-        f.add_command(label="Exit", command=self.destroy)
-        m.add_cascade(label="File", menu=f)
-
-        e = tk.Menu(m, tearoff=0)
-        e.add_command(label="Undo", accelerator="Ctrl+Z", command=lambda: self._safe(self.editor.edit_undo))
-        e.add_command(label="Redo", accelerator="Ctrl+Y", command=lambda: self._safe(self.editor.edit_redo))
-        e.add_command(label="Select All", accelerator="Ctrl+A", command=self._select_all)
-        m.add_cascade(label="Edit", menu=e)
-
-        r = tk.Menu(m, tearoff=0)
-        r.add_command(label="Run Compiler", accelerator="Ctrl+Enter", command=self.run_compiler)
-        m.add_cascade(label="Run", menu=r)
-
-        h = tk.Menu(m, tearoff=0)
-        h.add_command(label="About", command=lambda: messagebox.showinfo(
-            "About", "Syntax Studio -- GUI front-end for the Flex/Bison mini compiler."))
-        m.add_cascade(label="Help", menu=h)
-        self.config(menu=m)
+        menu_bar = tk.Menu(self)
+        file_menu = tk.Menu(menu_bar, tearoff=0)
+        file_menu.add_command(label='Open...', accelerator='Ctrl+O', command=self.load_file)
+        file_menu.add_command(label='Save', accelerator='Ctrl+S', command=self.save_file)
+        file_menu.add_command(label='Save As...', accelerator='Ctrl+Shift+S', command=self.save_file_as)
+        file_menu.add_separator()
+        file_menu.add_command(label='Exit', command=self.destroy)
+        menu_bar.add_cascade(label='File', menu=file_menu)
+        edit_menu = tk.Menu(menu_bar, tearoff=0)
+        edit_menu.add_command(label='Undo', accelerator='Ctrl+Z', command=lambda: self._safe(self.editor.edit_undo))
+        edit_menu.add_command(label='Redo', accelerator='Ctrl+Y', command=lambda: self._safe(self.editor.edit_redo))
+        edit_menu.add_command(label='Select All', accelerator='Ctrl+A', command=self._select_all)
+        menu_bar.add_cascade(label='Edit', menu=edit_menu)
+        run_menu = tk.Menu(menu_bar, tearoff=0)
+        run_menu.add_command(label='Run Compiler', accelerator='Ctrl+Enter', command=self.run_compiler)
+        menu_bar.add_cascade(label='Run', menu=run_menu)
+        help_menu = tk.Menu(menu_bar, tearoff=0)
+        help_menu.add_command(label='About', command=lambda: messagebox.showinfo('About', 'Syntax Studio\nC, C++ and Java educational compiler front-end using Flex and Bison.'))
+        menu_bar.add_cascade(label='Help', menu=help_menu)
+        self.config(menu=menu_bar)
 
     @staticmethod
-    def _safe(fn):
+    def _safe(function):
         try:
-            fn()
+            function()
         except tk.TclError:
             pass
 
-    def _select_all(self, *_a):
-        self.editor.tag_add("sel", "1.0", "end-1c")
-        return "break"
+    def _select_all(self, *_arguments):
+        self.editor.tag_add('sel', '1.0', 'end-1c')
+        return 'break'
 
     def _build_toolbar(self):
-        bar = tk.Frame(self, bg=WHITE, highlightbackground=BORDER, highlightthickness=1)
-        bar.pack(fill=tk.X)
-        inner = tk.Frame(bar, bg=WHITE)
+        toolbar = tk.Frame(self, bg=WHITE, highlightbackground=BORDER, highlightthickness=1)
+        toolbar.pack(fill=tk.X)
+        inner = tk.Frame(toolbar, bg=WHITE)
         inner.pack(fill=tk.X, padx=10, pady=8)
-
-        sec = dict(bg=WHITE, fg="#202124", border_color="#d5d8dd", border_width=1,
-                   radius=8, padx=14, pady=10)
-        pri = dict(bg=ACCENT, fg="white", radius=8, font=(UI[0], 10, "bold"), pady=10)
-
-        RoundedButton(inner, "Load File", icon="folder", command=self.load_file, **sec).pack(side=tk.LEFT, padx=(0, 6))
-        RoundedButton(inner, "Save", icon="save", command=self.save_file, **sec).pack(side=tk.LEFT, padx=(0, 6))
-        RoundedButton(inner, "\u25B6 Run Compiler  (Ctrl+Enter)", command=self.run_compiler, **pri).pack(
-            side=tk.LEFT, padx=(0, 6))
-        RoundedButton(inner, "Clear", icon="eraser", command=self.clear_all, **sec).pack(side=tk.LEFT, padx=(0, 14))
-
-        info = tk.Frame(inner, bg=WHITE)
-        info.pack(side=tk.LEFT)
-        self.file_title = tk.Label(info, font=(UI[0], 10, "bold"), bg=WHITE, anchor="w")
-        self.file_title.pack(anchor="w")
-        self.file_sub = tk.Label(info, font=(UI[0], 8), fg="#8a8f98", bg=WHITE, anchor="w")
-        self.file_sub.pack(anchor="w")
-
-        ready = os.path.isfile(COMPILER_PATH)
-        tk.Label(inner, text=("\u25CF  Compiler Ready" if ready else "\u25CF  Compiler Not Built (run make)"),
-                 fg=(GREEN if ready else RED), bg=WHITE, font=(UI[0], 9)).pack(side=tk.RIGHT)
+        secondary_button = {'bg': WHITE, 'fg': '#202124', 'border_color': '#d5d8dd', 'border_width': 1, 'radius': 8, 'padx': 14, 'pady': 10}
+        primary_button = {'bg': ACCENT, 'fg': 'white', 'radius': 8, 'font': (UI[0], 10, 'bold'), 'pady': 10}
+        RoundedButton(inner, 'Load File', icon='folder', command=self.load_file, **secondary_button).pack(side=tk.LEFT, padx=(0, 6))
+        RoundedButton(inner, 'Save', icon='save', command=self.save_file, **secondary_button).pack(side=tk.LEFT, padx=(0, 6))
+        RoundedButton(inner, '▶ Run Compiler  (Ctrl+Enter)', command=self.run_compiler, **primary_button).pack(side=tk.LEFT, padx=(0, 6))
+        RoundedButton(inner, 'Clear', icon='eraser', command=self.clear_all, **secondary_button).pack(side=tk.LEFT, padx=(0, 14))
+        tk.Label(inner, text='Language:', bg=WHITE, fg='#202124', font=UI).pack(side=tk.LEFT, padx=(0, 5))
+        language_box = ttk.Combobox(inner, textvariable=self.language_var, values=('C', 'C++', 'Java'), state='readonly', width=7, font=UI)
+        language_box.pack(side=tk.LEFT, padx=(0, 14))
+        language_box.bind('<<ComboboxSelected>>', self._on_language_change)
+        file_information = tk.Frame(inner, bg=WHITE)
+        file_information.pack(side=tk.LEFT)
+        self.file_title = tk.Label(file_information, font=(UI[0], 10, 'bold'), bg=WHITE, anchor='w')
+        self.file_title.pack(anchor='w')
+        self.file_sub = tk.Label(file_information, font=(UI[0], 8), fg='#8a8f98', bg=WHITE, anchor='w')
+        self.file_sub.pack(anchor='w')
+        compiler_ready = os.path.isfile(COMPILER_PATH)
+        tk.Label(inner, text='●  Compiler Ready' if compiler_ready else '●  Compiler Not Built (run make)', fg=GREEN if compiler_ready else RED, bg=WHITE, font=(UI[0], 9)).pack(side=tk.RIGHT)
         self._update_file_label()
 
     def _build_pipeline(self):
         self.pipeline_row = tk.Frame(self, bg=BG)
-        self.pipeline_row.pack(fill=tk.X, padx=14, pady=(12, 12))
-        self._refresh_pipeline(["skip"] * 5)
+        self.pipeline_row.pack(fill=tk.X, padx=14, pady=(10, 8))
 
     def _refresh_pipeline(self, statuses):
-        for w in self.pipeline_row.winfo_children():
-            w.destroy()
-        names = ["Lexer", "Parser", "AST", "Semantic", "TAC"]
-        for i, (name, status) in enumerate(zip(names, statuses)):
+        names = ('Lexer', 'Parser', 'AST', 'Semantic', 'Symbol', 'TAC')
+        icons = {'ok': '✓', 'fail': '✕', 'skip': '–'}
+        for widget in self.pipeline_row.winfo_children():
+            widget.destroy()
+        for index, (name, status) in enumerate(zip(names, statuses)):
             make_pill(self.pipeline_row, name, status).pack(side=tk.LEFT)
-            if i < len(names) - 1:
+            if index < len(names) - 1:
                 make_connector(self.pipeline_row).pack(side=tk.LEFT)
+            self.notebook.tab(index, text='{}. {}  {}'.format(index + 1, name, icons[status]))
 
-    # ---------------- body: editor + output ----------------
     def _build_body(self):
-        body = tk.Frame(self, bg=BG)
+        body = ttk.Panedwindow(self, orient=tk.VERTICAL)
         body.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
+        top = ttk.Panedwindow(body, orient=tk.HORIZONTAL)
+        editor_panel = tk.Frame(top, bg=WHITE, highlightbackground=BORDER, highlightthickness=1)
+        inspector_panel = tk.Frame(top, bg=WHITE, highlightbackground=BORDER, highlightthickness=1)
+        console_panel = tk.Frame(body, bg=BG)
+        top.add(editor_panel, weight=1)
+        top.add(inspector_panel, weight=1)
+        body.add(top, weight=3)
+        body.add(console_panel, weight=2)
+        self._build_editor(editor_panel)
+        self._build_output_panel(inspector_panel)
+        self._build_console_panel(console_panel)
 
-        left = tk.Frame(body, bg=BG)
-        left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
-        tk.Label(left, text="Source Code", font=(UI[0], 10, "bold"), bg=BG).pack(anchor="w", pady=(0, 4))
-        ec = tk.Frame(left, bg=BORDER)
-        ec.pack(fill=tk.BOTH, expand=True)
-
-        self.linenumbers = tk.Text(ec, width=4, padx=6, wrap="none", font=MONO, bg="#eef0f2",
-                                    fg="#8a8f98", bd=0, state="disabled", takefocus=0, cursor="arrow")
+    def _build_editor(self, parent):
+        left_panel = parent
+        tk.Label(left_panel, text='Source Code Editor', font=(UI[0], 10, 'bold'), bg=WHITE).pack(anchor='w', padx=8, pady=(6, 4))
+        editor_container = tk.Frame(left_panel, bg=BORDER)
+        editor_container.pack(fill=tk.BOTH, expand=True, padx=4, pady=(0, 4))
+        self.linenumbers = tk.Text(editor_container, width=4, padx=6, wrap='none', font=MONO, bg='#eef0f2', fg='#8a8f98', bd=0, state='disabled', takefocus=0, cursor='arrow')
         self.linenumbers.pack(side=tk.LEFT, fill=tk.Y)
-        for seq, amt in (("<MouseWheel>", None), ("<Button-4>", -1), ("<Button-5>", 1)):
-            if amt is None:
-                self.linenumbers.bind(seq, lambda e: self.editor.yview_scroll(int(-e.delta / 120), "units"))
-            else:
-                self.linenumbers.bind(seq, lambda e, a=amt: self.editor.yview_scroll(a, "units"))
-
-        self.editor = tk.Text(ec, wrap="none", font=MONO, undo=True, bg=WHITE, bd=0, padx=6,
-                               insertbackground="black")
-        yscroll = ttk.Scrollbar(ec, orient="vertical", command=self.editor.yview)
-        xscroll = ttk.Scrollbar(left, orient="horizontal", command=self.editor.xview)
-        self.editor.configure(yscrollcommand=self._on_editor_yview, xscrollcommand=xscroll.set)
+        self.editor = tk.Text(editor_container, wrap='none', font=MONO, undo=True, bg=WHITE, bd=0, padx=6, insertbackground='black')
+        vertical_scrollbar = ttk.Scrollbar(editor_container, orient='vertical', command=self.editor.yview)
+        horizontal_scrollbar = ttk.Scrollbar(left_panel, orient='horizontal', command=self.editor.xview)
+        self.editor.configure(yscrollcommand=self._on_editor_yview, xscrollcommand=horizontal_scrollbar.set)
         self.editor.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        yscroll.pack(side=tk.RIGHT, fill=tk.Y)
-        xscroll.pack(side=tk.BOTTOM, fill=tk.X)
-        self.editor_yscroll = yscroll
+        vertical_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        horizontal_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+        self.editor_yscroll = vertical_scrollbar
+        self.linenumbers.bind('<MouseWheel>', lambda event: self.editor.yview_scroll(int(-event.delta / 120), 'units'))
+        self.linenumbers.bind('<Button-4>', lambda _event: self.editor.yview_scroll(-1, 'units'))
+        self.linenumbers.bind('<Button-5>', lambda _event: self.editor.yview_scroll(1, 'units'))
+        tag_options = (('kw', {'foreground': KEYWORD}), ('comment', {'foreground': COMMENT}), ('number', {'foreground': NUMBER}), ('curline', {'background': CURLINE}), ('error_line', {'background': ERRLINE}))
+        for tag, options in tag_options:
+            self.editor.tag_configure(tag, **options)
+        self.editor.tag_lower('curline')
+        self.editor.tag_raise('error_line')
+        self.editor.bind('<KeyRelease>', self._on_editor_change)
+        self.editor.bind('<ButtonRelease-1>', self._on_editor_change)
 
-        for tag, kw in (("kw", dict(foreground=KEYWORD)), ("comment", dict(foreground=COMMENT)),
-                        ("number", dict(foreground=NUMBER)), ("curline", dict(background=CURLINE)),
-                        ("error_line", dict(background=ERRLINE))):
-            self.editor.tag_configure(tag, **kw)
-        self.editor.tag_lower("curline")
-        self.editor.tag_raise("error_line")
-
-        for ev in ("<KeyRelease>", "<ButtonRelease-1>"):
-            self.editor.bind(ev, self._on_editor_change)
-
-        right = tk.Frame(body, bg=BG)
-        right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5, 0))
-        head = tk.Frame(right, bg=BG)
-        head.pack(fill=tk.X, pady=(0, 4))
-        tk.Label(head, text="Compiler Output", font=(UI[0], 10, "bold"), bg=BG).pack(side=tk.LEFT)
-        tk.Label(head, text="   Click an error to jump to the source.", font=(UI[0], 8),
-                 fg="#8a8f98", bg=BG).pack(side=tk.LEFT)
-
-        errors_panel = tk.Frame(right, bg=BG, height=210)
-        errors_panel.pack(side=tk.BOTTOM, fill=tk.X, pady=(6, 0))
-        errors_panel.pack_propagate(False)
-        self._build_errors_table(errors_panel)
-
-        self.notebook = ttk.Notebook(right)
-        self.notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+    def _build_output_panel(self, parent):
+        right_panel = parent
+        output_header = tk.Frame(right_panel, bg=WHITE)
+        output_header.pack(fill=tk.X, padx=8, pady=(6, 4))
+        tk.Label(output_header, text='Compiler Pipeline Phase Inspector', font=(UI[0], 10, 'bold'), bg=WHITE).pack(side=tk.LEFT)
+        self.notebook = ttk.Notebook(right_panel)
+        self.notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=4, pady=(0, 4))
+        self.tokens_view = self._make_text_tab('1. Lexer')
+        self.parsing_view = self._make_text_tab('2. Parser')
         self._build_ast_tab()
-        self.semantic_view = self._make_text_tab("Semantic")
-        self.tac_view = self._make_text_tab("TAC")
-        self.console_view = self._make_text_tab("Console")
+        self.semantic_view = self._make_text_tab('4. Semantic')
+        self.symbol_view = self._make_text_tab('5. Symbols')
+        self.tac_view = self._make_text_tab('6. TAC')
 
     def _build_ast_tab(self):
         frame = ttk.Frame(self.notebook)
-        self.notebook.add(frame, text="AST")
-        self.ast_tree = ttk.Treeview(frame, show="tree")
-        yscroll = ttk.Scrollbar(frame, orient="vertical", command=self.ast_tree.yview)
-        self.ast_tree.configure(yscrollcommand=yscroll.set)
+        self.notebook.add(frame, text='3. AST')
+        self.ast_tree = ttk.Treeview(frame, show='tree')
+        scrollbar = ttk.Scrollbar(frame, orient='vertical', command=self.ast_tree.yview)
+        self.ast_tree.configure(yscrollcommand=scrollbar.set)
         self.ast_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        yscroll.pack(side=tk.RIGHT, fill=tk.Y)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
     def _make_text_tab(self, title):
         frame = ttk.Frame(self.notebook)
         self.notebook.add(frame, text=title)
-        text = tk.Text(frame, wrap="none", font=MONO_SM, state="disabled", bg=WHITE, bd=0, padx=6)
-        yscroll = ttk.Scrollbar(frame, orient="vertical", command=text.yview)
-        text.configure(yscrollcommand=yscroll.set)
-        text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        yscroll.pack(side=tk.RIGHT, fill=tk.Y)
-        text.tag_configure("error", foreground=RED)
-        text.tag_configure("ok", foreground=GREEN)
-        return text
+        text_widget = tk.Text(frame, wrap='none', font=MONO_SM, state='disabled', bg=WHITE, bd=0, padx=6)
+        scrollbar = ttk.Scrollbar(frame, orient='vertical', command=text_widget.yview)
+        text_widget.configure(yscrollcommand=scrollbar.set)
+        text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        text_widget.tag_configure('error', foreground=RED)
+        text_widget.tag_configure('ok', foreground=GREEN)
+        return text_widget
 
-    def _build_errors_table(self, parent):
-        head = tk.Frame(parent, bg=BG)
-        head.pack(fill=tk.X, pady=(4, 2))
-        tk.Label(head, text="Errors / Raw", font=(UI[0], 10, "bold"), bg=BG).pack(side=tk.LEFT)
-        self.error_badge = tk.Label(head, text="", bg=RED, fg="white", font=(UI[0], 8, "bold"), padx=6)
-        self.error_badge.pack(side=tk.LEFT, padx=6)
-
-        cols = ("line", "type", "message")
-        self.errors_tree = ttk.Treeview(parent, columns=cols, show="headings", height=6)
-        for c, w, anchor in (("line", 50, "center"), ("type", 80, "w"), ("message", 480, "w")):
-            self.errors_tree.heading(c, text=c.capitalize())
-            self.errors_tree.column(c, width=w, anchor=anchor)
-        yscroll = ttk.Scrollbar(parent, orient="vertical", command=self.errors_tree.yview)
-        self.errors_tree.configure(yscrollcommand=yscroll.set)
-        self.errors_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        yscroll.pack(side=tk.RIGHT, fill=tk.Y)
-        self.errors_tree.bind("<<TreeviewSelect>>", self._on_error_select)
+    def _build_console_panel(self, parent):
+        header = tk.Frame(parent, bg=BG)
+        header.pack(fill=tk.X, pady=(4, 2))
+        tk.Label(header, text='■  Output Terminal / Console Log', font=(UI[0], 10, 'bold'), bg=BG).pack(side=tk.LEFT)
+        self.error_badge = tk.Label(header, text='', bg=RED, fg='white', font=(UI[0], 8, 'bold'), padx=6)
+        tk.Label(header, text='Click an error line to jump to source.', font=(UI[0], 8), fg='#8a8f98', bg=BG).pack(side=tk.RIGHT)
+        container = tk.Frame(parent, bg=BORDER)
+        container.pack(fill=tk.BOTH, expand=True)
+        self.console_view = tk.Text(container, wrap='none', font=MONO_SM, state='disabled', bg=WHITE, bd=0, padx=8, pady=6)
+        vertical = ttk.Scrollbar(container, orient='vertical', command=self.console_view.yview)
+        horizontal = ttk.Scrollbar(container, orient='horizontal', command=self.console_view.xview)
+        self.console_view.configure(yscrollcommand=vertical.set, xscrollcommand=horizontal.set)
+        horizontal.pack(side=tk.BOTTOM, fill=tk.X)
+        vertical.pack(side=tk.RIGHT, fill=tk.Y)
+        self.console_view.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.console_view.tag_configure('error', foreground=RED)
+        self.console_view.tag_configure('ok', foreground=GREEN)
+        self.console_view.bind('<Button-1>', self._on_console_click)
 
     def _build_statusbar(self):
-        self.status_var = tk.StringVar(value="Ready.")
-        self.status_label = tk.Label(self, textvariable=self.status_var, anchor="w", padx=8, pady=4, bg=BG)
+        self.status_var = tk.StringVar(value='Ready.')
+        self.status_label = tk.Label(self, textvariable=self.status_var, anchor='w', padx=8, pady=4, bg=BG)
         self.status_label.pack(side=tk.BOTTOM, fill=tk.X)
 
     def _bind_shortcuts(self):
-        self.bind("<Control-o>", lambda e: self.load_file())
-        self.bind("<Control-s>", lambda e: self.save_file())
-        self.bind("<Control-Shift-S>", lambda e: self.save_file_as())
-        self.bind("<Control-Return>", lambda e: self.run_compiler())
-        self.bind("<Control-a>", self._select_all)
+        self.bind('<Control-o>', lambda _event: self.load_file())
+        self.bind('<Control-s>', lambda _event: self.save_file())
+        self.bind('<Control-Shift-S>', lambda _event: self.save_file_as())
+        self.bind('<Control-Return>', lambda _event: self.run_compiler())
+        self.bind('<Control-a>', self._select_all)
 
-    # ---------------- editor helpers ----------------
-    def _on_editor_change(self, event=None):
+    def _on_editor_change(self, _event=None):
         self.is_dirty = True
         self._update_file_label()
         self._update_line_numbers()
@@ -388,201 +345,232 @@ class SyntaxStudioApp(tk.Tk):
         self._highlight_current_line()
 
     def _update_line_numbers(self):
-        n = int(self.editor.index("end-1c").split(".")[0])
-        self.linenumbers.configure(state="normal")
-        self.linenumbers.delete("1.0", tk.END)
-        self.linenumbers.insert("1.0", "\n".join(str(i) for i in range(1, n + 1)))
-        self.linenumbers.configure(state="disabled")
+        total_lines = int(self.editor.index('end-1c').split('.')[0])
+        self.linenumbers.configure(state='normal')
+        self.linenumbers.delete('1.0', tk.END)
+        self.linenumbers.insert('1.0', '\n'.join((str(line) for line in range(1, total_lines + 1))))
+        self.linenumbers.configure(state='disabled')
         self.linenumbers.yview_moveto(self.editor.yview()[0])
 
     def _highlight_syntax(self):
-        content = self.editor.get("1.0", "end-1c")
-        for tag in ("kw", "number", "comment"):
-            self.editor.tag_remove(tag, "1.0", tk.END)
-        for pat, tag in ((KEYWORD_RE, "kw"), (NUMBER_RE, "number"), (COMMENT_RE, "comment")):
-            for m in pat.finditer(content):
-                self.editor.tag_add(tag, f"1.0+{m.start()}c", f"1.0+{m.end()}c")
+        content = self.editor.get('1.0', 'end-1c')
+        for tag in ('kw', 'number', 'comment'):
+            self.editor.tag_remove(tag, '1.0', tk.END)
+        patterns = ((KEYWORD_RE, 'kw'), (NUMBER_RE, 'number'), (COMMENT_RE, 'comment'))
+        for pattern, tag in patterns:
+            for match in pattern.finditer(content):
+                self.editor.tag_add(tag, '1.0+{}c'.format(match.start()), '1.0+{}c'.format(match.end()))
 
     def _highlight_current_line(self):
-        self.editor.tag_remove("curline", "1.0", tk.END)
-        cur = self.editor.index("insert")
-        self.editor.tag_add("curline", f"{cur} linestart", f"{cur} lineend+1c")
+        self.editor.tag_remove('curline', '1.0', tk.END)
+        current_position = self.editor.index('insert')
+        self.editor.tag_add('curline', '{} linestart'.format(current_position), '{} lineend+1c'.format(current_position))
 
     def _on_editor_yview(self, first, last):
         self.editor_yscroll.set(first, last)
         self.linenumbers.yview_moveto(first)
 
-    def _jump_to_editor_line(self, line_num):
-        last_line = int(self.editor.index("end-1c").split(".")[0])
-        line_num = max(1, min(line_num, last_line))
-        self.editor.tag_remove("error_line", "1.0", tk.END)
-        self.editor.tag_add("error_line", f"{line_num}.0", f"{line_num}.end+1c")
-        self.editor.see(f"{line_num}.0")
-        self.editor.mark_set("insert", f"{line_num}.0")
+    def _jump_to_editor_line(self, line_number):
+        last_line = int(self.editor.index('end-1c').split('.')[0])
+        line_number = max(1, min(line_number, last_line))
+        self.editor.tag_remove('error_line', '1.0', tk.END)
+        self.editor.tag_add('error_line', '{}.0'.format(line_number), '{}.end+1c'.format(line_number))
+        self.editor.see('{}.0'.format(line_number))
+        self.editor.mark_set('insert', '{}.0'.format(line_number))
         self.editor.focus_set()
 
-    def _on_error_select(self, _event=None):
-        sel = self.errors_tree.selection()
-        if not sel:
-            return
-        line = self.errors_tree.item(sel[0], "values")[0]
-        if str(line).isdigit():
-            self._jump_to_editor_line(int(line))
+    def _on_console_click(self, event):
+        index = self.console_view.index('@{},{}'.format(event.x, event.y))
+        line = self.console_view.get('{} linestart'.format(index), '{} lineend'.format(index))
+        match = ERR_RE.search(line)
+        if match:
+            self._jump_to_editor_line(int(match.group(2)))
 
     def _update_file_label(self):
-        name = os.path.basename(self.current_path) if self.current_path else "untitled.src"
-        self.file_title.configure(text=name + (" *" if self.is_dirty else ""))
-        self.file_sub.configure(text=self.current_path or "(unsaved)")
+        if self.current_path:
+            name = os.path.basename(self.current_path)
+        else:
+            extension = {'C': '.c', 'C++': '.cpp', 'Java': '.java'}[self.language_var.get()]
+            name = 'untitled{}'.format(extension)
+        if self.is_dirty:
+            name += ' *'
+        self.file_title.configure(text=name)
+        self.file_sub.configure(text=self.current_path or '(unsaved)')
 
-    # ---------------- file actions ----------------
+    def _on_language_change(self, _event=None):
+        language = self.language_var.get()
+        self.editor.delete('1.0', tk.END)
+        self.editor.insert('1.0', SAMPLES[language])
+        self.current_path = None
+        self.is_dirty = True
+        self._on_editor_change()
+        self._refresh_pipeline(['skip'] * 6)
+        self.status_var.set('{} sample loaded.'.format(language))
+
     def load_file(self):
-        path = filedialog.askopenfilename(filetypes=[("Supported files", "*.src *.c *.txt"), ("All files", "*.*")])
+        path = filedialog.askopenfilename(title='Load Source File', filetypes=[('Supported files', '*.src *.c *.cpp *.cc *.cxx *.java *.txt'), ('All files', '*.*')])
         if not path:
             return
-        if os.path.splitext(path)[1].lower() not in ALLOWED_EXTENSIONS:
-            messagebox.showerror("Unsupported file type", "Please choose a .src, .c, or .txt file.")
+        extension = os.path.splitext(path)[1].lower()
+        if extension not in ALLOWED_EXTENSIONS:
+            messagebox.showerror('Unsupported file type', 'Please choose a .src, .c, .cpp, .java, or .txt file.')
             return
         if os.path.getsize(path) > MAX_UPLOAD_BYTES:
-            messagebox.showerror("File too large", "Please choose a file under 10 KB.")
+            messagebox.showerror('File too large', 'Please choose a file under 10 KB.')
             return
         try:
-            with open(path, "r", encoding="utf-8", errors="replace") as f:
-                content = f.read()
-        except OSError as exc:
-            messagebox.showerror("Could not read file", str(exc))
+            with open(path, 'r', encoding='utf-8', errors='replace') as source_file:
+                content = source_file.read()
+        except OSError as error:
+            messagebox.showerror('Could not read file', str(error))
             return
-        self.editor.delete("1.0", tk.END)
-        self.editor.insert("1.0", content)
+        self.editor.delete('1.0', tk.END)
+        self.editor.insert('1.0', content)
+        if extension in ('.cpp', '.cc', '.cxx'):
+            self.language_var.set('C++')
+        elif extension == '.java':
+            self.language_var.set('Java')
+        elif extension == '.c':
+            self.language_var.set('C')
         self.current_path = path
         self.is_dirty = False
         self._on_editor_change()
         self.is_dirty = False
         self._update_file_label()
-        self.status_var.set(f"Loaded '{path}'.")
+        self.status_var.set("Loaded '{}'.".format(path))
 
     def save_file(self):
-        self._write_to_path(self.current_path) if self.current_path else self.save_file_as()
+        if self.current_path:
+            self._write_to_path(self.current_path)
+        else:
+            self.save_file_as()
 
     def save_file_as(self):
-        path = filedialog.asksaveasfilename(defaultextension=".src",
-                                             filetypes=[("Source files", "*.src"), ("All files", "*.*")])
+        language = self.language_var.get()
+        extension = {'C': '.c', 'C++': '.cpp', 'Java': '.java'}[language]
+        path = filedialog.asksaveasfilename(title='Save Source File', defaultextension=extension, filetypes=[('Source files', '*.c *.cpp *.java *.src'), ('All files', '*.*')])
         if path:
             self._write_to_path(path)
 
     def _write_to_path(self, path):
         try:
-            with open(path, "w", encoding="utf-8") as f:
-                f.write(self.editor.get("1.0", "end-1c"))
-        except OSError as exc:
-            messagebox.showerror("Could not save file", str(exc))
+            with open(path, 'w', encoding='utf-8') as source_file:
+                source_file.write(self.editor.get('1.0', 'end-1c'))
+        except OSError as error:
+            messagebox.showerror('Could not save file', str(error))
             return
         self.current_path = path
         self.is_dirty = False
         self._update_file_label()
-        self.status_var.set(f"Saved '{path}'.")
+        self.status_var.set("Saved '{}'.".format(path))
 
     def clear_all(self):
-        self.editor.delete("1.0", tk.END)
+        self.editor.delete('1.0', tk.END)
         self.current_path = None
         self._on_editor_change()
         self.is_dirty = False
         self._update_file_label()
-        self._refresh_pipeline(["skip"] * 5)
-        self.errors_tree.delete(*self.errors_tree.get_children())
-        self.error_badge.configure(text="")
-        for v in (self.semantic_view, self.tac_view, self.console_view):
-            self._set_text(v, "")
+        self._refresh_pipeline(['skip'] * 6)
+        self.error_badge.pack_forget()
+        for output_view in (self.tokens_view, self.parsing_view, self.semantic_view, self.symbol_view, self.tac_view, self.console_view):
+            self._set_text(output_view, '')
         self.ast_tree.delete(*self.ast_tree.get_children())
-        self.status_var.set("Ready.")
+        self.status_var.set('Ready.')
 
-    # ---------------- compiler ----------------
     def run_compiler(self):
-        source = self.editor.get("1.0", "end-1c")
+        source = self.editor.get('1.0', 'end-1c')
         if not source.strip():
-            messagebox.showwarning("Nothing to run", "The editor is empty.")
+            messagebox.showwarning('Nothing to run', 'The editor is empty.')
             return
-        self.editor.tag_remove("error_line", "1.0", tk.END)
-        self.status_var.set("Running compiler...")
+        self.editor.tag_remove('error_line', '1.0', tk.END)
+        self.status_var.set('Running {} compiler pipeline...'.format(self.language_var.get()))
         self.update_idletasks()
-
-        result = cr.run_source(source, compiler_path=COMPILER_PATH)
-        if "error" in result:
-            messagebox.showerror("Compiler error", result["error"])
-            self.status_var.set("Failed to run compiler.")
+        result = cr.run_source(source, compiler_path=COMPILER_PATH, language=self.language_var.get())
+        if 'error' in result:
+            messagebox.showerror('Compiler error', result['error'])
+            self.status_var.set('Failed to run compiler.')
             return
         self._display_result(result)
 
     def _pipeline_status(self, result):
-        if not result["parsed"]:
-            lexer_ok = "Lexical Error" not in result["raw_stderr"]
-            return ["ok", "fail", "skip", "skip", "skip"] if lexer_ok else ["fail", "skip", "skip", "skip", "skip"]
-        sem_ok = not result["semantic_errors"]
-        tac_ok = sem_ok and bool(result["tac"].strip())
-        return ["ok", "ok", "ok", "ok" if sem_ok else "fail", "ok" if tac_ok else "skip"]
+        if result['lexical_errors']:
+            return ['fail', 'skip', 'skip', 'skip', 'skip', 'skip']
+        if not result['parsed']:
+            return ['ok', 'fail', 'skip', 'skip', 'skip', 'skip']
+        semantic_ok = not result['semantic_errors']
+        symbol_table_ok = bool(result['symbol_table'].strip()) and 'SKIPPED' not in result['symbol_table']
+        tac_ok = semantic_ok and bool(result['tac'].strip()) and ('SKIPPED' not in result['tac'])
+        return ['ok', 'ok', 'ok', 'ok' if semantic_ok else 'fail', 'ok' if symbol_table_ok else 'skip', 'ok' if tac_ok else 'skip']
 
     def _parse_errors(self, stderr_text):
-        rows, lines, i = [], stderr_text.splitlines(), 0
-        while i < len(lines):
-            m = ERR_RE.match(lines[i])
-            if m:
-                rows.append((m.group(2), m.group(1), m.group(3)))
-            else:
-                m2 = SYNTAX_RE.match(lines[i])
-                if m2:
-                    msg = lines[i + 1].strip() if i + 1 < len(lines) else ""
-                    rows.append((m2.group(1), "Syntax", msg))
-                    i += 1
-            i += 1
+        rows = []
+        for line in stderr_text.splitlines():
+            match = ERR_RE.match(line.strip())
+            if match:
+                rows.append((match.group(2), match.group(1), match.group(3)))
         return rows
 
     def _populate_ast(self, ast_text):
         self.ast_tree.delete(*self.ast_tree.get_children())
-        stack = {-1: ""}
+        stack = {-1: ''}
         for line in ast_text.splitlines():
             if not line.strip():
                 continue
-            depth = (len(line) - len(line.lstrip(" "))) // 4
-            node = self.ast_tree.insert(stack.get(depth - 1, ""), "end", text=line.strip(), open=True)
+            depth = (len(line) - len(line.lstrip(' '))) // 4
+            parent = stack.get(depth - 1, '')
+            node = self.ast_tree.insert(parent, 'end', text=line.strip(), open=True)
             stack[depth] = node
 
     def _display_result(self, result):
         self._refresh_pipeline(self._pipeline_status(result))
-        self._populate_ast(result["ast"])
-
-        summary = [result["semantic_summary"]] if result["semantic_summary"] else []
-        if result["semantic_errors"]:
-            summary += [""] + result["semantic_errors"]
-        ok = bool(result["semantic_summary"]) and not result["semantic_errors"]
-        self._set_text(self.semantic_view, "\n".join(summary) or "(not reached)", "ok" if ok else "error")
-
-        self._set_text(self.tac_view, result["tac"] or "(not generated -- see Semantic tab)")
-        self._set_text(self.console_view, "--- stdout ---\n{}\n\n--- stderr ---\n{}".format(
-            result["raw_stdout"].strip(), result["raw_stderr"].strip() or "(empty)"))
-
-        rows = self._parse_errors(result["raw_stderr"])
-        self.errors_tree.delete(*self.errors_tree.get_children())
-        for row in rows:
-            self.errors_tree.insert("", "end", values=row)
-        self.error_badge.configure(text=str(len(rows)) if rows else "")
-
-        if not result["parsed"]:
-            self.status_var.set("Parsing failed -- see Errors / Raw.")
-        elif result["semantic_errors"]:
-            self.status_var.set(f"{len(result['semantic_errors'])} semantic error(s) found.")
+        self._populate_ast(result['ast'])
+        self._set_text(self.tokens_view, result['tokens'] or '(not reached)')
+        self._set_text(self.parsing_view, result['parsing'] or '(not reached)', 'ok' if result['parsed'] else 'error')
+        semantic_output = []
+        if result['semantic_summary']:
+            semantic_output.append(result['semantic_summary'])
+        if result['semantic_errors']:
+            semantic_output.append('')
+            semantic_output.extend(result['semantic_errors'])
+        semantic_ok = result['parsed'] and bool(result['semantic_summary']) and (not result['semantic_errors']) and ('SKIPPED' not in result['semantic_summary'])
+        self._set_text(self.semantic_view, '\n'.join(semantic_output) or '(not reached)', 'ok' if semantic_ok else 'error')
+        self._set_text(self.symbol_view, result['symbol_table'] or '(not generated)')
+        self._set_text(self.tac_view, result['tac'] or '(not generated -- see Semantic tab)')
+        error_rows = self._parse_errors(result['raw_stderr'])
+        failed = result['returncode'] != 0
+        banner = 'BUILD FAILED: COMPILER ERROR ENCOUNTERED' if failed else 'BUILD SUCCESSFUL: ALL 6 PHASES COMPLETED'
+        diagnostics = '\n'.join(('[ERROR] {} Error at line {}: {}'.format(error_type, line, message) for line, error_type, message in error_rows))
+        summary = '=' * 54 + '\n' + banner + '\n' + '=' * 54
+        if diagnostics:
+            summary += '\n\n' + diagnostics
+        console_output = '{}\n\nFull Console Output:\n\n{}{}'.format(summary, result['raw_stdout'].strip(), '\n\n' + result['raw_stderr'].strip() if result['raw_stderr'].strip() else '')
+        self._set_text(self.console_view, console_output)
+        self.console_view.configure(state='normal')
+        self.console_view.tag_add('error' if failed else 'ok', '1.0', '{}.end'.format(len(summary.splitlines())))
+        self.console_view.configure(state='disabled')
+        if error_rows:
+            self.error_badge.configure(text=str(len(error_rows)))
+            self.error_badge.pack(side=tk.LEFT, padx=6)
         else:
-            self.status_var.set("Success: parsed, type-checked, and generated TAC.")
+            self.error_badge.pack_forget()
+        if result['lexical_errors']:
+            self.status_var.set('Lexical analysis failed -- see Errors / Raw.')
+        elif not result['parsed']:
+            self.status_var.set('Parsing failed -- see Errors / Raw.')
+        elif result['semantic_errors']:
+            self.status_var.set('{} semantic error(s) found.'.format(len(result['semantic_errors'])))
+        else:
+            self.status_var.set('Success: all 6 compiler phases completed.')
 
     @staticmethod
     def _set_text(widget, content, tag=None):
-        widget.configure(state="normal")
-        widget.delete("1.0", tk.END)
-        widget.insert("1.0", content)
+        widget.configure(state='normal')
+        widget.delete('1.0', tk.END)
+        widget.insert('1.0', content)
         if tag:
-            widget.tag_add(tag, "1.0", tk.END)
-        widget.configure(state="disabled")
-
-
-if __name__ == "__main__":
+            widget.tag_add(tag, '1.0', tk.END)
+        widget.configure(state='disabled')
+if __name__ == '__main__':
     if not os.path.isfile(COMPILER_PATH):
         print("Warning: compiler binary not found at '{}'. Run 'make' first.".format(COMPILER_PATH))
     SyntaxStudioApp().mainloop()

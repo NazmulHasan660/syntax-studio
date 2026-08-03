@@ -1,11 +1,33 @@
-Semantic Error at line 8: Operator '&&' requires bool operands, got 'int'
+Semantic Error at line 8: Logical operator '&&' requires bool operands
 
-====================================
-Parsing Successful
-====================================
+===== Lexical Analysis =====
+Language: Mini/C
+Line  Token                 Lexeme
+------------------------------------------------------------
+[004] TOKEN: INT                  LEXEME: 'int'
+[004] TOKEN: ID                   LEXEME: 'x'
+[004] TOKEN: SEMICOLON            LEXEME: ';'
+[005] TOKEN: BOOL                 LEXEME: 'bool'
+[005] TOKEN: ID                   LEXEME: 'b'
+[005] TOKEN: SEMICOLON            LEXEME: ';'
+[007] TOKEN: ID                   LEXEME: 'x'
+[007] TOKEN: ASSIGN               LEXEME: '='
+[007] TOKEN: INT_CONST            LEXEME: '5'
+[007] TOKEN: SEMICOLON            LEXEME: ';'
+[008] TOKEN: ID                   LEXEME: 'b'
+[008] TOKEN: ASSIGN               LEXEME: '='
+[008] TOKEN: ID                   LEXEME: 'x'
+[008] TOKEN: AND                  LEXEME: '&&'
+[008] TOKEN: TRUE                 LEXEME: 'true'
+[008] TOKEN: SEMICOLON            LEXEME: ';'
+------------------------------------------------------------
+Total parser tokens: 16
+Lexical Analysis: SUCCESS (no lexical errors)
 
-Abstract Syntax Tree
---------------------
+===== Parsing =====
+Parsing successful.
+
+===== Abstract Syntax Tree =====
 PROGRAM
     DECLARATION (x : int)
     DECLARATION (b : bool)
@@ -16,10 +38,16 @@ PROGRAM
             IDENTIFIER (x)
             BOOL (true)
 
-====================================
-Semantic Analysis
-====================================
+===== Semantic Analysis =====
+Semantic Analysis: FAILED (1 error(s))
 
+===== Symbol Table =====
+Name            Type       Scope      Line      
+--------------------------------------------------
+x               int        0          4         
+b               bool       0          5         
 
-1 semantic error(s) found. Skipping code generation.
+===== Three Address Code (TAC) =====
+Status: NOT GENERATED
+Reason: Semantic analysis failed with 1 error(s).
 exit code: 1

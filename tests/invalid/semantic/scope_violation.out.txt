@@ -1,11 +1,45 @@
 Semantic Error at line 14: Undeclared variable 'y'
 
-====================================
-Parsing Successful
-====================================
+===== Lexical Analysis =====
+Language: Mini/C
+Line  Token                 Lexeme
+------------------------------------------------------------
+[005] TOKEN: INT                  LEXEME: 'int'
+[005] TOKEN: ID                   LEXEME: 'x'
+[005] TOKEN: SEMICOLON            LEXEME: ';'
+[006] TOKEN: ID                   LEXEME: 'x'
+[006] TOKEN: ASSIGN               LEXEME: '='
+[006] TOKEN: INT_CONST            LEXEME: '5'
+[006] TOKEN: SEMICOLON            LEXEME: ';'
+[008] TOKEN: IF                   LEXEME: 'if'
+[008] TOKEN: LPAREN               LEXEME: '('
+[008] TOKEN: ID                   LEXEME: 'x'
+[008] TOKEN: GT                   LEXEME: '>'
+[008] TOKEN: INT_CONST            LEXEME: '0'
+[008] TOKEN: RPAREN               LEXEME: ')'
+[008] TOKEN: LBRACE               LEXEME: '{'
+[009] TOKEN: INT                  LEXEME: 'int'
+[009] TOKEN: ID                   LEXEME: 'y'
+[009] TOKEN: SEMICOLON            LEXEME: ';'
+[010] TOKEN: ID                   LEXEME: 'y'
+[010] TOKEN: ASSIGN               LEXEME: '='
+[010] TOKEN: INT_CONST            LEXEME: '10'
+[010] TOKEN: SEMICOLON            LEXEME: ';'
+[011] TOKEN: PRINT                LEXEME: 'print'
+[011] TOKEN: ID                   LEXEME: 'y'
+[011] TOKEN: SEMICOLON            LEXEME: ';'
+[012] TOKEN: RBRACE               LEXEME: '}'
+[014] TOKEN: PRINT                LEXEME: 'print'
+[014] TOKEN: ID                   LEXEME: 'y'
+[014] TOKEN: SEMICOLON            LEXEME: ';'
+------------------------------------------------------------
+Total parser tokens: 28
+Lexical Analysis: SUCCESS (no lexical errors)
 
-Abstract Syntax Tree
---------------------
+===== Parsing =====
+Parsing successful.
+
+===== Abstract Syntax Tree =====
 PROGRAM
     DECLARATION (x : int)
     ASSIGNMENT (x)
@@ -23,10 +57,16 @@ PROGRAM
     PRINT
         IDENTIFIER (y)
 
-====================================
-Semantic Analysis
-====================================
+===== Semantic Analysis =====
+Semantic Analysis: FAILED (1 error(s))
 
+===== Symbol Table =====
+Name            Type       Scope      Line      
+--------------------------------------------------
+x               int        0          5         
+y               int        1          9         
 
-1 semantic error(s) found. Skipping code generation.
+===== Three Address Code (TAC) =====
+Status: NOT GENERATED
+Reason: Semantic analysis failed with 1 error(s).
 exit code: 1

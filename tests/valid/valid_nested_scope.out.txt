@@ -1,10 +1,44 @@
 
-====================================
-Parsing Successful
-====================================
+===== Lexical Analysis =====
+Language: Mini/C
+Line  Token                 Lexeme
+------------------------------------------------------------
+[006] TOKEN: INT                  LEXEME: 'int'
+[006] TOKEN: ID                   LEXEME: 'x'
+[006] TOKEN: SEMICOLON            LEXEME: ';'
+[007] TOKEN: ID                   LEXEME: 'x'
+[007] TOKEN: ASSIGN               LEXEME: '='
+[007] TOKEN: INT_CONST            LEXEME: '1'
+[007] TOKEN: SEMICOLON            LEXEME: ';'
+[009] TOKEN: IF                   LEXEME: 'if'
+[009] TOKEN: LPAREN               LEXEME: '('
+[009] TOKEN: ID                   LEXEME: 'x'
+[009] TOKEN: EQ                   LEXEME: '=='
+[009] TOKEN: INT_CONST            LEXEME: '1'
+[009] TOKEN: RPAREN               LEXEME: ')'
+[009] TOKEN: LBRACE               LEXEME: '{'
+[010] TOKEN: INT                  LEXEME: 'int'
+[010] TOKEN: ID                   LEXEME: 'x'
+[010] TOKEN: SEMICOLON            LEXEME: ';'
+[011] TOKEN: ID                   LEXEME: 'x'
+[011] TOKEN: ASSIGN               LEXEME: '='
+[011] TOKEN: INT_CONST            LEXEME: '99'
+[011] TOKEN: SEMICOLON            LEXEME: ';'
+[012] TOKEN: PRINT                LEXEME: 'print'
+[012] TOKEN: ID                   LEXEME: 'x'
+[012] TOKEN: SEMICOLON            LEXEME: ';'
+[013] TOKEN: RBRACE               LEXEME: '}'
+[015] TOKEN: PRINT                LEXEME: 'print'
+[015] TOKEN: ID                   LEXEME: 'x'
+[015] TOKEN: SEMICOLON            LEXEME: ';'
+------------------------------------------------------------
+Total parser tokens: 28
+Lexical Analysis: SUCCESS (no lexical errors)
 
-Abstract Syntax Tree
---------------------
+===== Parsing =====
+Parsing successful.
+
+===== Abstract Syntax Tree =====
 PROGRAM
     DECLARATION (x : int)
     ASSIGNMENT (x)
@@ -22,16 +56,16 @@ PROGRAM
     PRINT
         IDENTIFIER (x)
 
-====================================
-Semantic Analysis
-====================================
+===== Semantic Analysis =====
+Semantic analysis successful. No errors found.
 
-No semantic errors found.
+===== Symbol Table =====
+Name            Type       Scope      Line      
+--------------------------------------------------
+x               int        0          6         
+x               int        1          10        
 
-====================================
-Three Address Code
-====================================
-
+===== Three Address Code (TAC) =====
     // declare x : int
     x = 1
     t0 = x == 1

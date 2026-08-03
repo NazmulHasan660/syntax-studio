@@ -1,102 +1,459 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "ast/ast.h"
 #include "semantic/semantic.h"
+#include "symbol_table/symbol_table.h"
 #include "codegen/tac.h"
 
+
 extern FILE *yyin;
-extern int yyparse();
+
+extern int yyparse(void);
+extern int yylex(void);
+
+extern void yyrestart(
+    FILE *input_file
+);
 
 extern ASTNode *root;
+
+extern int line_number;
 extern int lexical_error_count;
 extern int syntax_error_count;
 
-int main(int argc, char *argv[])
+
+/*
+ * When dump_tokens is 1, the lexer prints
+ * every generated token.
+ */
+int dump_tokens = 0;
+
+
+static void print_section(
+    const char *title
+)
 {
-    if (argc != 2)
+    printf(
+        "\n===== %s =====\n",
+        title
+    );
+}
+
+
+static const char *detect_language(
+    const char *file_path,
+    const char *requested_language
+)
+{
+    /*
+     * The GUI explicitly passes C, C++ or Java.
+     */
+    if (
+        requested_language != NULL &&
+        requested_language[0] != '\0'
+    )
     {
-        printf("Usage: %s <source_file>\n", argv[0]);
-        return EXIT_FAILURE;
+        return requested_language;
     }
 
-    yyin = fopen(argv[1], "r");
+    /*
+     * Terminal execution detects the language
+     * from the source file extension.
+     */
+    const char *extension =
+        strrchr(file_path, '.');
 
-    if (yyin == NULL)
+    if (extension == NULL)
+        return "Mini/C";
+
+    if (
+        strcmp(extension, ".cpp") == 0 ||
+        strcmp(extension, ".cc") == 0 ||
+        strcmp(extension, ".cxx") == 0
+    )
+    {
+        return "C++";
+    }
+
+    if (strcmp(extension, ".java") == 0)
+        return "Java";
+
+    if (strcmp(extension, ".c") == 0)
+        return "C";
+
+    return "Mini/C";
+}
+
+
+static FILE *open_source(
+    const char *file_path
+)
+{
+    FILE *source_file =
+        fopen(file_path, "r");
+
+    if (source_file == NULL)
     {
         perror("Cannot open input file");
+    }
+
+    return source_file;
+}
+
+
+/*
+ * Print the remaining phase statuses when
+ * lexical analysis fails.
+ */
+static void print_not_executed_after_lexical(void)
+{
+    print_section("Parsing");
+
+    printf(
+        "Status: NOT EXECUTED\n"
+        "Reason: Lexical analysis failed.\n"
+    );
+
+    print_section("Abstract Syntax Tree");
+
+    printf(
+        "Status: NOT GENERATED\n"
+        "Reason: Parsing was not completed.\n"
+    );
+
+    print_section("Semantic Analysis");
+
+    printf(
+        "Status: NOT EXECUTED\n"
+        "Reason: No valid AST was produced.\n"
+    );
+
+    print_section("Symbol Table");
+
+    printf(
+        "Status: NOT GENERATED\n"
+        "Reason: Semantic analysis was not executed.\n"
+    );
+
+    print_section("Three Address Code (TAC)");
+
+    printf(
+        "Status: NOT GENERATED\n"
+        "Reason: Compilation stopped after lexical analysis.\n"
+    );
+
+    printf(
+        "\nCompilation halted after Phase 1 because "
+        "%d lexical error(s) were found.\n",
+        lexical_error_count
+    );
+}
+
+
+/*
+ * Print the remaining phase statuses when
+ * parsing fails.
+ */
+static void print_not_executed_after_parsing(void)
+{
+    print_section("Abstract Syntax Tree");
+
+    printf(
+        "Status: NOT GENERATED\n"
+        "Reason: Parsing failed.\n"
+    );
+
+    print_section("Semantic Analysis");
+
+    printf(
+        "Status: NOT EXECUTED\n"
+        "Reason: No valid AST was produced.\n"
+    );
+
+    print_section("Symbol Table");
+
+    printf(
+        "Status: NOT GENERATED\n"
+        "Reason: Semantic analysis was not executed.\n"
+    );
+
+    print_section("Three Address Code (TAC)");
+
+    printf(
+        "Status: NOT GENERATED\n"
+        "Reason: Compilation stopped after parsing.\n"
+    );
+
+    printf(
+        "\nCompilation halted after Phase 2 "
+        "because parsing failed.\n"
+    );
+}
+
+
+int main(
+    int argc,
+    char *argv[]
+)
+{
+    if (
+        argc < 2 ||
+        argc > 3
+    )
+    {
+        fprintf(
+            stderr,
+            "Usage: %s <source_file> [C|C++|Java]\n",
+            argv[0]
+        );
+
         return EXIT_FAILURE;
     }
 
-    int exit_status = EXIT_SUCCESS;
+    const char *language =
+        detect_language(
+            argv[1],
+            argc == 3
+                ? argv[2]
+                : NULL
+        );
 
-    /* yyparse() can return 0 ("accepted") even when syntax errors were
-     * found, because the grammar has basic error recovery (see the
-     * `error SEMICOLON` rule in parser.y): it discards a broken
-     * statement and keeps parsing so later errors are still reported.
-     * So a clean run additionally requires zero counted errors. */
-    if (yyparse() == 0 && lexical_error_count == 0 && syntax_error_count == 0)
-    {
-        printf("\n====================================\n");
-        printf("Parsing Successful\n");
-        printf("====================================\n\n");
+    /*
+     * ===================================================
+     * Phase 1: Lexical Analysis
+     * ===================================================
+     */
+    print_section(
+        "Lexical Analysis"
+    );
 
-        printf("Abstract Syntax Tree\n");
-        printf("--------------------\n");
+    printf(
+        "Language: %s\n",
+        language
+    );
 
-        if (root != NULL)
-        {
-            print_ast(root, 0);
+    printf(
+        "Line  Token                 Lexeme\n"
+    );
 
-            printf("\n====================================\n");
-            printf("Semantic Analysis\n");
-            printf("====================================\n\n");
+    printf(
+        "------------------------------------------------------------\n"
+    );
 
-            int errors = analyze_semantics(root);
+    yyin = open_source(
+        argv[1]
+    );
 
-            if (errors > 0)
-            {
-                printf("\n%d semantic error(s) found. Skipping code generation.\n",
-                       errors);
-                exit_status = EXIT_FAILURE;
-            }
-            else
-            {
-                printf("No semantic errors found.\n");
+    if (yyin == NULL)
+        return EXIT_FAILURE;
 
-                printf("\n====================================\n");
-                printf("Three Address Code\n");
-                printf("====================================\n\n");
+    yyrestart(yyin);
 
-                generate_tac(root);
-            }
+    line_number = 1;
+    lexical_error_count = 0;
+    dump_tokens = 1;
 
-            free_ast(root);
-        }
-    }
-    else
-    {
-        /* Syntax and/or lexical errors were already reported to
-         * stderr by yyerror()/the lexer as they were encountered. */
-        exit_status = EXIT_FAILURE;
+    int token_count = 0;
 
-        if (lexical_error_count > 0)
-        {
-            fprintf(stderr, "\n%d lexical error(s) found.\n", lexical_error_count);
-        }
-
-        if (syntax_error_count > 0)
-        {
-            fprintf(stderr, "%d syntax error(s) found.\n", syntax_error_count);
-        }
-
-        if (root != NULL)
-        {
-            free_ast(root);
-        }
-    }
+    while (yylex() != 0)
+        token_count++;
 
     fclose(yyin);
 
-    return exit_status;
+    dump_tokens = 0;
+
+    printf(
+        "------------------------------------------------------------\n"
+    );
+
+    printf(
+        "Total parser tokens: %d\n",
+        token_count
+    );
+
+    if (lexical_error_count > 0)
+    {
+        printf(
+            "Lexical Analysis: FAILED "
+            "(%d error(s))\n",
+            lexical_error_count
+        );
+
+        print_not_executed_after_lexical();
+
+        return EXIT_FAILURE;
+    }
+
+    printf(
+        "Lexical Analysis: SUCCESS "
+        "(no lexical errors)\n"
+    );
+
+    /*
+     * ===================================================
+     * Phase 2: Parsing
+     * ===================================================
+     */
+    print_section(
+        "Parsing"
+    );
+
+    yyin = open_source(
+        argv[1]
+    );
+
+    if (yyin == NULL)
+        return EXIT_FAILURE;
+
+    yyrestart(yyin);
+
+    line_number = 1;
+    syntax_error_count = 0;
+    root = NULL;
+
+    int parse_status =
+        yyparse();
+
+    fclose(yyin);
+
+    if (
+        parse_status != 0 ||
+        syntax_error_count > 0
+    )
+    {
+        printf(
+            "Parsing: FAILED "
+            "(%d syntax error(s))\n",
+            syntax_error_count
+        );
+
+        if (root != NULL)
+        {
+            free_ast(root);
+            root = NULL;
+        }
+
+        print_not_executed_after_parsing();
+
+        return EXIT_FAILURE;
+    }
+
+    printf(
+        "Parsing successful.\n"
+    );
+
+    /*
+     * ===================================================
+     * Phase 3: Abstract Syntax Tree
+     * ===================================================
+     */
+    print_section(
+        "Abstract Syntax Tree"
+    );
+
+    if (root != NULL)
+    {
+        print_ast(
+            root,
+            0
+        );
+    }
+    else
+    {
+        printf(
+            "(empty program)\n"
+        );
+    }
+
+    /*
+     * ===================================================
+     * Phase 4: Semantic Analysis
+     * ===================================================
+     */
+    print_section(
+        "Semantic Analysis"
+    );
+
+    int semantic_errors =
+        analyze_semantics(root);
+
+    if (semantic_errors == 0)
+    {
+        printf(
+            "Semantic analysis successful. "
+            "No errors found.\n"
+        );
+    }
+    else
+    {
+        printf(
+            "Semantic Analysis: FAILED "
+            "(%d error(s))\n",
+            semantic_errors
+        );
+    }
+
+    /*
+     * ===================================================
+     * Phase 5: Symbol Table
+     * ===================================================
+     */
+    print_section(
+        "Symbol Table"
+    );
+
+    symtab_print();
+
+    /*
+     * ===================================================
+     * Phase 6: Three Address Code
+     * ===================================================
+     */
+    print_section(
+        "Three Address Code (TAC)"
+    );
+
+    if (semantic_errors == 0)
+    {
+        TACList tac =
+            generate_tac(root);
+
+        print_tac(&tac);
+
+        if (tac.count == 0)
+        {
+            printf(
+                "(no TAC instructions generated)\n"
+            );
+        }
+
+        free_tac(&tac);
+    }
+    else
+    {
+        printf(
+            "Status: NOT GENERATED\n"
+        );
+
+        printf(
+            "Reason: Semantic analysis failed "
+            "with %d error(s).\n",
+            semantic_errors
+        );
+    }
+
+    /*
+     * Free all allocated compiler memory.
+     */
+    symtab_free();
+
+    free_ast(root);
+    root = NULL;
+
+    if (semantic_errors == 0)
+        return EXIT_SUCCESS;
+
+    return EXIT_FAILURE;
 }

@@ -1,16 +1,49 @@
 Lexical Error at line 4: Invalid character '@'
-
-=========================================
-Syntax Error at line 4
-syntax error, unexpected INT_CONST
-=========================================
 Lexical Error at line 6: Invalid character '#'
 
-=========================================
-Syntax Error at line 6
-syntax error, unexpected ID, expecting ASSIGN
-=========================================
+===== Lexical Analysis =====
+Language: Mini/C
+Line  Token                 Lexeme
+------------------------------------------------------------
+[003] TOKEN: INT                  LEXEME: 'int'
+[003] TOKEN: ID                   LEXEME: 'x'
+[003] TOKEN: SEMICOLON            LEXEME: ';'
+[004] TOKEN: ID                   LEXEME: 'x'
+[004] TOKEN: ASSIGN               LEXEME: '='
+[004] TOKEN: INT_CONST            LEXEME: '5'
+[004] TOKEN: INT_CONST            LEXEME: '3'
+[004] TOKEN: SEMICOLON            LEXEME: ';'
+[005] TOKEN: PRINT                LEXEME: 'print'
+[005] TOKEN: ID                   LEXEME: 'x'
+[005] TOKEN: SEMICOLON            LEXEME: ';'
+[006] TOKEN: ID                   LEXEME: 'this'
+[006] TOKEN: ID                   LEXEME: 'line'
+[006] TOKEN: ID                   LEXEME: 'is'
+[006] TOKEN: ID                   LEXEME: 'also'
+[006] TOKEN: ID                   LEXEME: 'invalid'
+------------------------------------------------------------
+Total parser tokens: 16
+Lexical Analysis: FAILED (2 error(s))
 
-2 lexical error(s) found.
-2 syntax error(s) found.
+===== Parsing =====
+Status: NOT EXECUTED
+Reason: Lexical analysis failed.
+
+===== Abstract Syntax Tree =====
+Status: NOT GENERATED
+Reason: Parsing was not completed.
+
+===== Semantic Analysis =====
+Status: NOT EXECUTED
+Reason: No valid AST was produced.
+
+===== Symbol Table =====
+Status: NOT GENERATED
+Reason: Semantic analysis was not executed.
+
+===== Three Address Code (TAC) =====
+Status: NOT GENERATED
+Reason: Compilation stopped after lexical analysis.
+
+Compilation halted after Phase 1 because 2 lexical error(s) were found.
 exit code: 1

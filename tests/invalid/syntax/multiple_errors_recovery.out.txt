@@ -1,12 +1,56 @@
 
 =========================================
-Syntax Error at line 7
-syntax error, unexpected PRINT
+Syntax Error at line 7: syntax error, unexpected PRINT
 =========================================
 
 =========================================
-Syntax Error at line 10
-syntax error, unexpected ID, expecting SEMICOLON
+Syntax Error at line 10: syntax error, unexpected ID, expecting SEMICOLON
 =========================================
-2 syntax error(s) found.
+
+===== Lexical Analysis =====
+Language: Mini/C
+Line  Token                 Lexeme
+------------------------------------------------------------
+[005] TOKEN: INT                  LEXEME: 'int'
+[005] TOKEN: ID                   LEXEME: 'x'
+[005] TOKEN: SEMICOLON            LEXEME: ';'
+[006] TOKEN: ID                   LEXEME: 'x'
+[006] TOKEN: ASSIGN               LEXEME: '='
+[006] TOKEN: INT_CONST            LEXEME: '5'
+[007] TOKEN: PRINT                LEXEME: 'print'
+[007] TOKEN: ID                   LEXEME: 'x'
+[007] TOKEN: SEMICOLON            LEXEME: ';'
+[009] TOKEN: INT                  LEXEME: 'int'
+[009] TOKEN: ID                   LEXEME: 'y'
+[010] TOKEN: ID                   LEXEME: 'y'
+[010] TOKEN: ASSIGN               LEXEME: '='
+[010] TOKEN: INT_CONST            LEXEME: '10'
+[010] TOKEN: SEMICOLON            LEXEME: ';'
+[011] TOKEN: PRINT                LEXEME: 'print'
+[011] TOKEN: ID                   LEXEME: 'y'
+[011] TOKEN: SEMICOLON            LEXEME: ';'
+------------------------------------------------------------
+Total parser tokens: 18
+Lexical Analysis: SUCCESS (no lexical errors)
+
+===== Parsing =====
+Parsing: FAILED (2 syntax error(s))
+
+===== Abstract Syntax Tree =====
+Status: NOT GENERATED
+Reason: Parsing failed.
+
+===== Semantic Analysis =====
+Status: NOT EXECUTED
+Reason: No valid AST was produced.
+
+===== Symbol Table =====
+Status: NOT GENERATED
+Reason: Semantic analysis was not executed.
+
+===== Three Address Code (TAC) =====
+Status: NOT GENERATED
+Reason: Compilation stopped after parsing.
+
+Compilation halted after Phase 2 because parsing failed.
 exit code: 1

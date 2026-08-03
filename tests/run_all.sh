@@ -47,7 +47,7 @@ run_one () {
 }
 
 echo "=== valid/ (expect exit 0) ==="
-for f in tests/valid/*.src; do
+for f in tests/valid/*.src tests/valid/*.cpp tests/valid/*.java; do
     run_one "$f" "yes"
 done
 

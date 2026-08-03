@@ -20,7 +20,7 @@ int syntax_error_count = 0;
 
 %define parse.error verbose
 
-%union{
+%union {
     int ival;
     float fval;
     char *sval;
@@ -28,27 +28,37 @@ int syntax_error_count = 0;
 }
 
 %type <node> Program
+%type <node> OuterDeclarations
 %type <node> StatementList
 %type <node> Statement
 %type <node> Block
 %type <node> Declaration
+%type <node> DeclarationNoSemi
+%type <node> DeclList
+%type <node> DeclItem
 %type <node> Assignment
 %type <node> IfStatement
 %type <node> WhileStatement
+%type <node> ForStatement
+%type <node> DoWhileStatement
+%type <node> ForInit
+%type <node> ForUpdate
+%type <node> ReturnStatement
 %type <node> PrintStatement
 %type <node> Expression
+%type <node> ExpressionList
 %type <sval> Type
 
 %token INT FLOAT BOOL
-%token IF ELSE WHILE PRINT
+%token IF ELSE WHILE FOR DO PRINT PRINT_CALL COUT RETURN
 %token TRUE FALSE
 
-%token <sval> ID
+%token <sval> ID STRING_LITERAL
 %token <ival> INT_CONST
 %token <fval> FLOAT_CONST
 
-%token PLUS MINUS MUL DIV MOD
-%token LT GT LE GE EQ NEQ
+%token PLUS MINUS MUL DIV MOD INC DEC
+%token LT GT LE GE EQ NEQ LSHIFT RSHIFT
 %token AND OR NOT
 %token ASSIGN
 
@@ -62,20 +72,48 @@ int syntax_error_count = 0;
 %left LT GT LE GE
 %left PLUS MINUS
 %left MUL DIV MOD
-%right NOT UMINUS
+%precedence NOT
+%precedence UMINUS
 
 %destructor { free($$); } <sval>
+
+%precedence LOWER_THAN_ELSE
+%precedence ELSE
 
 %start Program
 
 %%
 
 Program
-    : StatementList
+    : OuterDeclarations
     {
         root = create_node(NODE_PROGRAM, "PROGRAM");
         root->left = $1;
         $$ = root;
+    }
+    ;
+
+OuterDeclarations
+    : %empty
+    {
+        $$ = NULL;
+    }
+    | OuterDeclarations Statement
+    {
+        if ($1 == NULL)
+        {
+            $$ = $2;
+        }
+        else
+        {
+            ASTNode *temp = $1;
+
+            while (temp->next != NULL)
+                temp = temp->next;
+
+            temp->next = $2;
+            $$ = $1;
+        }
     }
     ;
 
@@ -97,7 +135,7 @@ StatementList
             $$ = $1;
         }
     }
-    |
+    | %empty
     {
         $$ = NULL;
     }
@@ -120,6 +158,18 @@ Statement
     {
         $$ = $1;
     }
+    | ForStatement
+    {
+        $$ = $1;
+    }
+    | DoWhileStatement
+    {
+        $$ = $1;
+    }
+    | ReturnStatement
+    {
+        $$ = $1;
+    }
     | PrintStatement
     {
         $$ = $1;
@@ -128,18 +178,16 @@ Statement
     {
         $$ = $1;
     }
+    | SEMICOLON
+    {
+        $$ = NULL;
+    }
     | error SEMICOLON
     {
-        /* Basic error recovery: a malformed statement was rejected
-         * (yyerror() already reported it). Discard tokens up to the
-         * next ';' and keep parsing so later errors in the same
-         * file are still found and reported, instead of stopping
-         * at the very first one. */
         $$ = NULL;
         yyerrok;
     }
     ;
- 
 
 Block
     : LBRACE StatementList RBRACE
@@ -150,11 +198,101 @@ Block
     ;
 
 Declaration
-    : Type ID SEMICOLON
+    : DeclarationNoSemi SEMICOLON
     {
-        $$ = create_node(NODE_DECLARATION, $2);
-        $$->data_type = $1;
-        free($2); /* create_node() made its own copy */
+        $$ = $1;
+    }
+    ;
+
+DeclarationNoSemi
+    : Type DeclList
+    {
+        ASTNode *head = NULL;
+        ASTNode *curr = NULL;
+
+        ASTNode *item = $2;
+
+        while (item != NULL)
+        {
+            ASTNode *next_item = item->next;
+            item->next = NULL;
+
+            if (item->type == NODE_IDENTIFIER)
+            {
+                ASTNode *decl =
+                    create_node(NODE_DECLARATION, item->text);
+
+                decl->data_type = strdup($1);
+
+                if (head == NULL)
+                {
+                    head = decl;
+                    curr = decl;
+                }
+                else
+                {
+                    curr->next = decl;
+                    curr = decl;
+                }
+            }
+            else if (item->type == NODE_ASSIGNMENT)
+            {
+                ASTNode *decl =
+                    create_node(NODE_DECLARATION, item->text);
+
+                decl->data_type = strdup($1);
+
+                if (head == NULL)
+                {
+                    head = decl;
+                    curr = decl;
+                }
+                else
+                {
+                    curr->next = decl;
+                    curr = decl;
+                }
+
+                curr->next = item;
+                curr = item;
+            }
+
+            item = next_item;
+        }
+
+        free($1);
+        $$ = head;
+    }
+    ;
+
+DeclList
+    : DeclList COMMA DeclItem
+    {
+        ASTNode *temp = $1;
+
+        while (temp->next != NULL)
+            temp = temp->next;
+
+        temp->next = $3;
+        $$ = $1;
+    }
+    | DeclItem
+    {
+        $$ = $1;
+    }
+    ;
+
+DeclItem
+    : ID
+    {
+        $$ = create_node(NODE_IDENTIFIER, $1);
+        free($1);
+    }
+    | ID ASSIGN Expression
+    {
+        $$ = create_node(NODE_ASSIGNMENT, $1);
+        $$->left = $3;
+        free($1);
     }
     ;
 
@@ -178,18 +316,40 @@ Assignment
     {
         $$ = create_node(NODE_ASSIGNMENT, $1);
         $$->left = $3;
-        free($1); /* create_node() made its own copy */
+        free($1);
+    }
+    | ID INC SEMICOLON
+    {
+        $$ = create_node(NODE_ASSIGNMENT, $1);
+
+        ASTNode *add = create_node(NODE_BINARY_OP, "+");
+        add->left = create_node(NODE_IDENTIFIER, $1);
+        add->right = create_node(NODE_INT_LITERAL, "1");
+
+        $$->left = add;
+        free($1);
+    }
+    | ID DEC SEMICOLON
+    {
+        $$ = create_node(NODE_ASSIGNMENT, $1);
+
+        ASTNode *sub = create_node(NODE_BINARY_OP, "-");
+        sub->left = create_node(NODE_IDENTIFIER, $1);
+        sub->right = create_node(NODE_INT_LITERAL, "1");
+
+        $$->left = sub;
+        free($1);
     }
     ;
 
 IfStatement
-    : IF LPAREN Expression RPAREN Block
+    : IF LPAREN Expression RPAREN Statement %prec LOWER_THAN_ELSE
     {
         $$ = create_node(NODE_IF, NULL);
         $$->left = $3;
         $$->right = $5;
     }
-    | IF LPAREN Expression RPAREN Block ELSE Block
+    | IF LPAREN Expression RPAREN Statement ELSE Statement
     {
         $$ = create_node(NODE_IF, NULL);
         $$->left = $3;
@@ -199,11 +359,111 @@ IfStatement
     ;
 
 WhileStatement
-    : WHILE LPAREN Expression RPAREN Block
+    : WHILE LPAREN Expression RPAREN Statement
     {
         $$ = create_node(NODE_WHILE, NULL);
         $$->left = $3;
         $$->right = $5;
+    }
+    ;
+
+ForStatement
+    : FOR LPAREN ForInit SEMICOLON Expression SEMICOLON ForUpdate RPAREN Statement
+    {
+        ASTNode *for_node = create_node(NODE_FOR, NULL);
+        for_node->left = $5;
+        for_node->right = $9;
+        for_node->third = $7;
+
+        if ($3 != NULL)
+        {
+            ASTNode *tail = $3;
+
+            while (tail->next != NULL)
+                tail = tail->next;
+
+            tail->next = for_node;
+
+            $$ = create_node(NODE_BLOCK, NULL);
+            $$->left = $3;
+        }
+        else
+        {
+            $$ = for_node;
+        }
+    }
+    ;
+
+DoWhileStatement
+    : DO Statement WHILE LPAREN Expression RPAREN SEMICOLON
+    {
+        $$ = create_node(NODE_DO_WHILE, NULL);
+        $$->left = $5;
+        $$->right = $2;
+    }
+    ;
+
+ForInit
+    : DeclarationNoSemi
+    {
+        $$ = $1;
+    }
+    | ID ASSIGN Expression
+    {
+        $$ = create_node(NODE_ASSIGNMENT, $1);
+        $$->left = $3;
+        free($1);
+    }
+    | %empty
+    {
+        $$ = NULL;
+    }
+    ;
+
+ForUpdate
+    : ID ASSIGN Expression
+    {
+        $$ = create_node(NODE_ASSIGNMENT, $1);
+        $$->left = $3;
+        free($1);
+    }
+    | ID INC
+    {
+        $$ = create_node(NODE_ASSIGNMENT, $1);
+
+        ASTNode *add = create_node(NODE_BINARY_OP, "+");
+        add->left = create_node(NODE_IDENTIFIER, $1);
+        add->right = create_node(NODE_INT_LITERAL, "1");
+
+        $$->left = add;
+        free($1);
+    }
+    | ID DEC
+    {
+        $$ = create_node(NODE_ASSIGNMENT, $1);
+
+        ASTNode *sub = create_node(NODE_BINARY_OP, "-");
+        sub->left = create_node(NODE_IDENTIFIER, $1);
+        sub->right = create_node(NODE_INT_LITERAL, "1");
+
+        $$->left = sub;
+        free($1);
+    }
+    | %empty
+    {
+        $$ = NULL;
+    }
+    ;
+
+ReturnStatement
+    : RETURN Expression SEMICOLON
+    {
+        $$ = create_node(NODE_UNARY_OP, "return");
+        $$->left = $2;
+    }
+    | RETURN SEMICOLON
+    {
+        $$ = create_node(NODE_UNARY_OP, "return");
     }
     ;
 
@@ -213,7 +473,39 @@ PrintStatement
         $$ = create_node(NODE_PRINT, NULL);
         $$->left = $2;
     }
+    | COUT LSHIFT Expression SEMICOLON
+    {
+        $$ = create_node(NODE_PRINT, NULL);
+        $$->left = $3;
+    }
+    | PRINT_CALL LPAREN ExpressionList RPAREN SEMICOLON
+    {
+        $$ = create_node(NODE_PRINT, NULL);
+        $$->left = $3;
+    }
     ;
+
+ExpressionList
+    : ExpressionList COMMA Expression
+    {
+        ASTNode *temp = $1;
+
+        while (temp->next != NULL)
+            temp = temp->next;
+
+        temp->next = $3;
+        $$ = $1;
+    }
+    | Expression
+    {
+        $$ = $1;
+    }
+    | %empty
+    {
+        $$ = NULL;
+    }
+    ;
+
 Expression
     : Expression OR Expression
     {
@@ -310,19 +602,26 @@ Expression
     | ID
     {
         $$ = create_node(NODE_IDENTIFIER, $1);
-        free($1); /* create_node() made its own copy */
+        free($1);
     }
     | INT_CONST
     {
-        char buffer[32];
+        char buffer[64];
         snprintf(buffer, sizeof(buffer), "%d", $1);
+
         $$ = create_node(NODE_INT_LITERAL, buffer);
     }
     | FLOAT_CONST
     {
-        char buffer[32];
-        snprintf(buffer, sizeof(buffer), "%g", $1);
+        char buffer[64];
+        snprintf(buffer, sizeof(buffer), "%f", $1);
+
         $$ = create_node(NODE_FLOAT_LITERAL, buffer);
+    }
+    | STRING_LITERAL
+    {
+        $$ = create_node(NODE_INT_LITERAL, $1);
+        free($1);
     }
     | TRUE
     {
@@ -340,14 +639,12 @@ void yyerror(const char *s)
 {
     syntax_error_count++;
 
-    fprintf(stderr,
-            "\n=========================================\n");
-    fprintf(stderr,
-            "Syntax Error at line %d\n",
-            line_number);
-    fprintf(stderr,
-            "%s\n",
-            s);
-    fprintf(stderr,
-            "=========================================\n");
+    fprintf(stderr, "\n=========================================\n");
+    fprintf(
+        stderr,
+        "Syntax Error at line %d: %s\n",
+        line_number,
+        s
+    );
+    fprintf(stderr, "=========================================\n");
 }

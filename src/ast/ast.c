@@ -6,7 +6,11 @@
 
 extern int line_number;
 
-static void print_indent(int level);
+static void print_indent(int level)
+{
+    for (int i = 0; i < level; i++)
+        printf("    ");
+}
 
 ASTNode *create_node(NodeType type, char *text)
 {
@@ -14,19 +18,13 @@ ASTNode *create_node(NodeType type, char *text)
 
     if (node == NULL)
     {
-        fprintf(stderr, "Memory allocation failed.\n");
+        fprintf(stderr, "Memory allocation failed for AST node.\n");
         exit(EXIT_FAILURE);
     }
 
     node->type = type;
-
-    if (text != NULL)
-        node->text = strdup(text);
-    else
-        node->text = NULL;
-
+    node->text = (text != NULL) ? strdup(text) : NULL;
     node->data_type = NULL;
-
     node->line = line_number;
 
     node->left = NULL;
@@ -35,12 +33,6 @@ ASTNode *create_node(NodeType type, char *text)
     node->next = NULL;
 
     return node;
-}
-
-static void print_indent(int level)
-{
-    for (int i = 0; i < level; i++)
-        printf("    ");
 }
 
 void print_ast(ASTNode *node, int level)
@@ -60,14 +52,18 @@ void print_ast(ASTNode *node, int level)
                 break;
 
             case NODE_DECLARATION:
-                printf("DECLARATION (%s : %s)\n",
-                       node->text ? node->text : "",
-                       node->data_type ? node->data_type : "?");
+                printf(
+                    "DECLARATION (%s : %s)\n",
+                    node->text ? node->text : "",
+                    node->data_type ? node->data_type : "?"
+                );
                 break;
 
             case NODE_ASSIGNMENT:
-                printf("ASSIGNMENT (%s)\n",
-                       node->text ? node->text : "");
+                printf(
+                    "ASSIGNMENT (%s)\n",
+                    node->text ? node->text : ""
+                );
                 break;
 
             case NODE_IF:
@@ -78,38 +74,58 @@ void print_ast(ASTNode *node, int level)
                 printf("WHILE\n");
                 break;
 
+            case NODE_FOR:
+                printf("FOR\n");
+                break;
+
+            case NODE_DO_WHILE:
+                printf("DO-WHILE\n");
+                break;
+
             case NODE_PRINT:
                 printf("PRINT\n");
                 break;
 
             case NODE_BINARY_OP:
-                printf("BINARY OP (%s)\n",
-                       node->text ? node->text : "");
+                printf(
+                    "BINARY OP (%s)\n",
+                    node->text ? node->text : ""
+                );
                 break;
 
             case NODE_UNARY_OP:
-                printf("UNARY OP (%s)\n",
-                       node->text ? node->text : "");
+                printf(
+                    "UNARY OP (%s)\n",
+                    node->text ? node->text : ""
+                );
                 break;
 
             case NODE_IDENTIFIER:
-                printf("IDENTIFIER (%s)\n",
-                       node->text ? node->text : "");
+                printf(
+                    "IDENTIFIER (%s)\n",
+                    node->text ? node->text : ""
+                );
                 break;
 
             case NODE_INT_LITERAL:
-                printf("INT (%s)\n",
-                       node->text ? node->text : "");
+                printf(
+                    "INT (%s)\n",
+                    node->text ? node->text : ""
+                );
                 break;
 
             case NODE_FLOAT_LITERAL:
-                printf("FLOAT (%s)\n",
-                       node->text ? node->text : "");
+                printf(
+                    "FLOAT (%s)\n",
+                    node->text ? node->text : ""
+                );
                 break;
 
             case NODE_BOOL_LITERAL:
-                printf("BOOL (%s)\n",
-                       node->text ? node->text : "");
+                printf(
+                    "BOOL (%s)\n",
+                    node->text ? node->text : ""
+                );
                 break;
 
             default:
@@ -136,14 +152,10 @@ void free_ast(ASTNode *node)
     free_ast(node->next);
 
     if (node->text != NULL)
-    {
         free(node->text);
-    }
 
     if (node->data_type != NULL)
-    {
         free(node->data_type);
-    }
 
     free(node);
 }

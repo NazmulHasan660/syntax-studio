@@ -1,0 +1,169 @@
+
+===== Lexical Analysis =====
+Language: C++
+Line  Token                 Lexeme
+------------------------------------------------------------
+[001] TOKEN: DIRECTIVE            LEXEME: '#include <iostream>' (ignored)
+[002] TOKEN: NAMESPACE            LEXEME: 'using namespace std;' (ignored)
+[004] TOKEN: INT                  LEXEME: 'int'
+[004] TOKEN: ID                   LEXEME: 'i'
+[004] TOKEN: ASSIGN               LEXEME: '='
+[004] TOKEN: INT_CONST            LEXEME: '0'
+[004] TOKEN: SEMICOLON            LEXEME: ';'
+[006] TOKEN: WHILE                LEXEME: 'while'
+[006] TOKEN: LPAREN               LEXEME: '('
+[006] TOKEN: ID                   LEXEME: 'i'
+[006] TOKEN: LT                   LEXEME: '<'
+[006] TOKEN: INT_CONST            LEXEME: '2'
+[006] TOKEN: RPAREN               LEXEME: ')'
+[006] TOKEN: LBRACE               LEXEME: '{'
+[007] TOKEN: COUT                 LEXEME: 'cout'
+[007] TOKEN: LSHIFT               LEXEME: '<<'
+[007] TOKEN: ID                   LEXEME: 'i'
+[007] TOKEN: SEMICOLON            LEXEME: ';'
+[008] TOKEN: ID                   LEXEME: 'i'
+[008] TOKEN: INC                  LEXEME: '++'
+[008] TOKEN: SEMICOLON            LEXEME: ';'
+[009] TOKEN: RBRACE               LEXEME: '}'
+[011] TOKEN: FOR                  LEXEME: 'for'
+[011] TOKEN: LPAREN               LEXEME: '('
+[011] TOKEN: INT                  LEXEME: 'int'
+[011] TOKEN: ID                   LEXEME: 'j'
+[011] TOKEN: ASSIGN               LEXEME: '='
+[011] TOKEN: INT_CONST            LEXEME: '0'
+[011] TOKEN: SEMICOLON            LEXEME: ';'
+[011] TOKEN: ID                   LEXEME: 'j'
+[011] TOKEN: LT                   LEXEME: '<'
+[011] TOKEN: INT_CONST            LEXEME: '2'
+[011] TOKEN: SEMICOLON            LEXEME: ';'
+[011] TOKEN: ID                   LEXEME: 'j'
+[011] TOKEN: INC                  LEXEME: '++'
+[011] TOKEN: RPAREN               LEXEME: ')'
+[011] TOKEN: LBRACE               LEXEME: '{'
+[012] TOKEN: COUT                 LEXEME: 'cout'
+[012] TOKEN: LSHIFT               LEXEME: '<<'
+[012] TOKEN: ID                   LEXEME: 'j'
+[012] TOKEN: SEMICOLON            LEXEME: ';'
+[013] TOKEN: RBRACE               LEXEME: '}'
+[015] TOKEN: INT                  LEXEME: 'int'
+[015] TOKEN: ID                   LEXEME: 'k'
+[015] TOKEN: ASSIGN               LEXEME: '='
+[015] TOKEN: INT_CONST            LEXEME: '0'
+[015] TOKEN: SEMICOLON            LEXEME: ';'
+[017] TOKEN: DO                   LEXEME: 'do'
+[017] TOKEN: LBRACE               LEXEME: '{'
+[018] TOKEN: COUT                 LEXEME: 'cout'
+[018] TOKEN: LSHIFT               LEXEME: '<<'
+[018] TOKEN: ID                   LEXEME: 'k'
+[018] TOKEN: SEMICOLON            LEXEME: ';'
+[019] TOKEN: ID                   LEXEME: 'k'
+[019] TOKEN: INC                  LEXEME: '++'
+[019] TOKEN: SEMICOLON            LEXEME: ';'
+[020] TOKEN: RBRACE               LEXEME: '}'
+[020] TOKEN: WHILE                LEXEME: 'while'
+[020] TOKEN: LPAREN               LEXEME: '('
+[020] TOKEN: ID                   LEXEME: 'k'
+[020] TOKEN: LT                   LEXEME: '<'
+[020] TOKEN: INT_CONST            LEXEME: '2'
+[020] TOKEN: RPAREN               LEXEME: ')'
+[020] TOKEN: SEMICOLON            LEXEME: ';'
+[022] TOKEN: RETURN               LEXEME: 'return'
+[022] TOKEN: INT_CONST            LEXEME: '0'
+[022] TOKEN: SEMICOLON            LEXEME: ';'
+------------------------------------------------------------
+Total parser tokens: 65
+Lexical Analysis: SUCCESS (no lexical errors)
+
+===== Parsing =====
+Parsing successful.
+
+===== Abstract Syntax Tree =====
+PROGRAM
+    DECLARATION (i : int)
+    ASSIGNMENT (i)
+        INT (0)
+    WHILE
+        BINARY OP (<)
+            IDENTIFIER (i)
+            INT (2)
+        BLOCK
+            PRINT
+                IDENTIFIER (i)
+            ASSIGNMENT (i)
+                BINARY OP (+)
+                    IDENTIFIER (i)
+                    INT (1)
+    BLOCK
+        DECLARATION (j : int)
+        ASSIGNMENT (j)
+            INT (0)
+        FOR
+            BINARY OP (<)
+                IDENTIFIER (j)
+                INT (2)
+            BLOCK
+                PRINT
+                    IDENTIFIER (j)
+            ASSIGNMENT (j)
+                BINARY OP (+)
+                    IDENTIFIER (j)
+                    INT (1)
+    DECLARATION (k : int)
+    ASSIGNMENT (k)
+        INT (0)
+    DO-WHILE
+        BINARY OP (<)
+            IDENTIFIER (k)
+            INT (2)
+        BLOCK
+            PRINT
+                IDENTIFIER (k)
+            ASSIGNMENT (k)
+                BINARY OP (+)
+                    IDENTIFIER (k)
+                    INT (1)
+    UNARY OP (return)
+        INT (0)
+
+===== Semantic Analysis =====
+Semantic analysis successful. No errors found.
+
+===== Symbol Table =====
+Name            Type       Scope      Line      
+--------------------------------------------------
+i               int        0          4         
+j               int        1          11        
+k               int        0          15        
+
+===== Three Address Code (TAC) =====
+    // declare i : int
+    i = 0
+L0:
+    t0 = i < 2
+    ifFalse t0 goto L1
+    print i
+    t1 = i + 1
+    i = t1
+    goto L0
+L1:
+    // declare j : int
+    j = 0
+L2:
+    t2 = j < 2
+    ifFalse t2 goto L3
+    print j
+    t3 = j + 1
+    j = t3
+    goto L2
+L3:
+    // declare k : int
+    k = 0
+L4:
+    print k
+    t4 = k + 1
+    k = t4
+    t5 = k < 2
+    ifFalse t5 goto L5
+    goto L4
+L5:
+exit code: 0

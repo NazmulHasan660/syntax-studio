@@ -1,11 +1,31 @@
 Semantic Error at line 7: Type mismatch: cannot assign 'bool' to variable 'x' of type 'int'
 
-====================================
-Parsing Successful
-====================================
+===== Lexical Analysis =====
+Language: Mini/C
+Line  Token                 Lexeme
+------------------------------------------------------------
+[003] TOKEN: INT                  LEXEME: 'int'
+[003] TOKEN: ID                   LEXEME: 'x'
+[003] TOKEN: SEMICOLON            LEXEME: ';'
+[004] TOKEN: BOOL                 LEXEME: 'bool'
+[004] TOKEN: ID                   LEXEME: 'flag'
+[004] TOKEN: SEMICOLON            LEXEME: ';'
+[006] TOKEN: ID                   LEXEME: 'flag'
+[006] TOKEN: ASSIGN               LEXEME: '='
+[006] TOKEN: TRUE                 LEXEME: 'true'
+[006] TOKEN: SEMICOLON            LEXEME: ';'
+[007] TOKEN: ID                   LEXEME: 'x'
+[007] TOKEN: ASSIGN               LEXEME: '='
+[007] TOKEN: ID                   LEXEME: 'flag'
+[007] TOKEN: SEMICOLON            LEXEME: ';'
+------------------------------------------------------------
+Total parser tokens: 14
+Lexical Analysis: SUCCESS (no lexical errors)
 
-Abstract Syntax Tree
---------------------
+===== Parsing =====
+Parsing successful.
+
+===== Abstract Syntax Tree =====
 PROGRAM
     DECLARATION (x : int)
     DECLARATION (flag : bool)
@@ -14,10 +34,16 @@ PROGRAM
     ASSIGNMENT (x)
         IDENTIFIER (flag)
 
-====================================
-Semantic Analysis
-====================================
+===== Semantic Analysis =====
+Semantic Analysis: FAILED (1 error(s))
 
+===== Symbol Table =====
+Name            Type       Scope      Line      
+--------------------------------------------------
+x               int        0          3         
+flag            bool       0          4         
 
-1 semantic error(s) found. Skipping code generation.
+===== Three Address Code (TAC) =====
+Status: NOT GENERATED
+Reason: Semantic analysis failed with 1 error(s).
 exit code: 1

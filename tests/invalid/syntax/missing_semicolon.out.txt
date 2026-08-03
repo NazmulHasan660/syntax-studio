@@ -1,7 +1,43 @@
 
 =========================================
-Syntax Error at line 5
-syntax error, unexpected PRINT
+Syntax Error at line 5: syntax error, unexpected PRINT
 =========================================
-1 syntax error(s) found.
+
+===== Lexical Analysis =====
+Language: Mini/C
+Line  Token                 Lexeme
+------------------------------------------------------------
+[003] TOKEN: INT                  LEXEME: 'int'
+[003] TOKEN: ID                   LEXEME: 'x'
+[003] TOKEN: SEMICOLON            LEXEME: ';'
+[004] TOKEN: ID                   LEXEME: 'x'
+[004] TOKEN: ASSIGN               LEXEME: '='
+[004] TOKEN: INT_CONST            LEXEME: '5'
+[005] TOKEN: PRINT                LEXEME: 'print'
+[005] TOKEN: ID                   LEXEME: 'x'
+[005] TOKEN: SEMICOLON            LEXEME: ';'
+------------------------------------------------------------
+Total parser tokens: 9
+Lexical Analysis: SUCCESS (no lexical errors)
+
+===== Parsing =====
+Parsing: FAILED (1 syntax error(s))
+
+===== Abstract Syntax Tree =====
+Status: NOT GENERATED
+Reason: Parsing failed.
+
+===== Semantic Analysis =====
+Status: NOT EXECUTED
+Reason: No valid AST was produced.
+
+===== Symbol Table =====
+Status: NOT GENERATED
+Reason: Semantic analysis was not executed.
+
+===== Three Address Code (TAC) =====
+Status: NOT GENERATED
+Reason: Compilation stopped after parsing.
+
+Compilation halted after Phase 2 because parsing failed.
 exit code: 1

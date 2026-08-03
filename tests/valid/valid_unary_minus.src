@@ -1,0 +1,28 @@
+// Demonstrates unary minus (bonus feature, Section 14): applied to a
+// variable, a float literal, a parenthesized expression, and mixed
+// with binary minus (a - -b), plus interaction with the existing
+// increment/decrement bonus feature.
+
+int a;
+int b;
+int c;
+float f;
+
+a = 10;
+b = 3;
+
+c = -a;
+print c;
+
+c = a - -b;
+print c;
+
+c = -(a + b);
+print c;
+
+f = -3.5;
+print f;
+
+b++;
+c = -b;
+print c;

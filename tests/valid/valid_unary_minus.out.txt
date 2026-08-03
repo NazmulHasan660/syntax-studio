@@ -1,0 +1,163 @@
+
+===== Lexical Analysis =====
+Language: Mini/C
+Line  Token                 Lexeme
+------------------------------------------------------------
+[006] TOKEN: INT                  LEXEME: 'int'
+[006] TOKEN: ID                   LEXEME: 'a'
+[006] TOKEN: SEMICOLON            LEXEME: ';'
+[007] TOKEN: INT                  LEXEME: 'int'
+[007] TOKEN: ID                   LEXEME: 'b'
+[007] TOKEN: SEMICOLON            LEXEME: ';'
+[008] TOKEN: INT                  LEXEME: 'int'
+[008] TOKEN: ID                   LEXEME: 'c'
+[008] TOKEN: SEMICOLON            LEXEME: ';'
+[009] TOKEN: FLOAT                LEXEME: 'float'
+[009] TOKEN: ID                   LEXEME: 'f'
+[009] TOKEN: SEMICOLON            LEXEME: ';'
+[011] TOKEN: ID                   LEXEME: 'a'
+[011] TOKEN: ASSIGN               LEXEME: '='
+[011] TOKEN: INT_CONST            LEXEME: '10'
+[011] TOKEN: SEMICOLON            LEXEME: ';'
+[012] TOKEN: ID                   LEXEME: 'b'
+[012] TOKEN: ASSIGN               LEXEME: '='
+[012] TOKEN: INT_CONST            LEXEME: '3'
+[012] TOKEN: SEMICOLON            LEXEME: ';'
+[014] TOKEN: ID                   LEXEME: 'c'
+[014] TOKEN: ASSIGN               LEXEME: '='
+[014] TOKEN: MINUS                LEXEME: '-'
+[014] TOKEN: ID                   LEXEME: 'a'
+[014] TOKEN: SEMICOLON            LEXEME: ';'
+[015] TOKEN: PRINT                LEXEME: 'print'
+[015] TOKEN: ID                   LEXEME: 'c'
+[015] TOKEN: SEMICOLON            LEXEME: ';'
+[017] TOKEN: ID                   LEXEME: 'c'
+[017] TOKEN: ASSIGN               LEXEME: '='
+[017] TOKEN: ID                   LEXEME: 'a'
+[017] TOKEN: MINUS                LEXEME: '-'
+[017] TOKEN: MINUS                LEXEME: '-'
+[017] TOKEN: ID                   LEXEME: 'b'
+[017] TOKEN: SEMICOLON            LEXEME: ';'
+[018] TOKEN: PRINT                LEXEME: 'print'
+[018] TOKEN: ID                   LEXEME: 'c'
+[018] TOKEN: SEMICOLON            LEXEME: ';'
+[020] TOKEN: ID                   LEXEME: 'c'
+[020] TOKEN: ASSIGN               LEXEME: '='
+[020] TOKEN: MINUS                LEXEME: '-'
+[020] TOKEN: LPAREN               LEXEME: '('
+[020] TOKEN: ID                   LEXEME: 'a'
+[020] TOKEN: PLUS                 LEXEME: '+'
+[020] TOKEN: ID                   LEXEME: 'b'
+[020] TOKEN: RPAREN               LEXEME: ')'
+[020] TOKEN: SEMICOLON            LEXEME: ';'
+[021] TOKEN: PRINT                LEXEME: 'print'
+[021] TOKEN: ID                   LEXEME: 'c'
+[021] TOKEN: SEMICOLON            LEXEME: ';'
+[023] TOKEN: ID                   LEXEME: 'f'
+[023] TOKEN: ASSIGN               LEXEME: '='
+[023] TOKEN: MINUS                LEXEME: '-'
+[023] TOKEN: FLOAT_CONST          LEXEME: '3.5'
+[023] TOKEN: SEMICOLON            LEXEME: ';'
+[024] TOKEN: PRINT                LEXEME: 'print'
+[024] TOKEN: ID                   LEXEME: 'f'
+[024] TOKEN: SEMICOLON            LEXEME: ';'
+[026] TOKEN: ID                   LEXEME: 'b'
+[026] TOKEN: INC                  LEXEME: '++'
+[026] TOKEN: SEMICOLON            LEXEME: ';'
+[027] TOKEN: ID                   LEXEME: 'c'
+[027] TOKEN: ASSIGN               LEXEME: '='
+[027] TOKEN: MINUS                LEXEME: '-'
+[027] TOKEN: ID                   LEXEME: 'b'
+[027] TOKEN: SEMICOLON            LEXEME: ';'
+[028] TOKEN: PRINT                LEXEME: 'print'
+[028] TOKEN: ID                   LEXEME: 'c'
+[028] TOKEN: SEMICOLON            LEXEME: ';'
+------------------------------------------------------------
+Total parser tokens: 69
+Lexical Analysis: SUCCESS (no lexical errors)
+
+===== Parsing =====
+Parsing successful.
+
+===== Abstract Syntax Tree =====
+PROGRAM
+    DECLARATION (a : int)
+    DECLARATION (b : int)
+    DECLARATION (c : int)
+    DECLARATION (f : float)
+    ASSIGNMENT (a)
+        INT (10)
+    ASSIGNMENT (b)
+        INT (3)
+    ASSIGNMENT (c)
+        UNARY OP (-)
+            IDENTIFIER (a)
+    PRINT
+        IDENTIFIER (c)
+    ASSIGNMENT (c)
+        BINARY OP (-)
+            IDENTIFIER (a)
+            UNARY OP (-)
+                IDENTIFIER (b)
+    PRINT
+        IDENTIFIER (c)
+    ASSIGNMENT (c)
+        UNARY OP (-)
+            BINARY OP (+)
+                IDENTIFIER (a)
+                IDENTIFIER (b)
+    PRINT
+        IDENTIFIER (c)
+    ASSIGNMENT (f)
+        UNARY OP (-)
+            FLOAT (3.500000)
+    PRINT
+        IDENTIFIER (f)
+    ASSIGNMENT (b)
+        BINARY OP (+)
+            IDENTIFIER (b)
+            INT (1)
+    ASSIGNMENT (c)
+        UNARY OP (-)
+            IDENTIFIER (b)
+    PRINT
+        IDENTIFIER (c)
+
+===== Semantic Analysis =====
+Semantic analysis successful. No errors found.
+
+===== Symbol Table =====
+Name            Type       Scope      Line      
+--------------------------------------------------
+a               int        0          6         
+b               int        0          7         
+c               int        0          8         
+f               float      0          9         
+
+===== Three Address Code (TAC) =====
+    // declare a : int
+    // declare b : int
+    // declare c : int
+    // declare f : float
+    a = 10
+    b = 3
+    t0 = -a
+    c = t0
+    print c
+    t1 = -b
+    t2 = a - t1
+    c = t2
+    print c
+    t3 = a + b
+    t4 = -t3
+    c = t4
+    print c
+    t5 = -3.500000
+    f = t5
+    print f
+    t6 = b + 1
+    b = t6
+    t7 = -b
+    c = t7
+    print c
+exit code: 0

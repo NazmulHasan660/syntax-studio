@@ -1,22 +1,40 @@
 Semantic Error at line 3: Assignment to undeclared variable 'z'
 Semantic Error at line 4: Undeclared variable 'z'
 
-====================================
-Parsing Successful
-====================================
+===== Lexical Analysis =====
+Language: Mini/C
+Line  Token                 Lexeme
+------------------------------------------------------------
+[003] TOKEN: ID                   LEXEME: 'z'
+[003] TOKEN: ASSIGN               LEXEME: '='
+[003] TOKEN: INT_CONST            LEXEME: '99'
+[003] TOKEN: SEMICOLON            LEXEME: ';'
+[004] TOKEN: PRINT                LEXEME: 'print'
+[004] TOKEN: ID                   LEXEME: 'z'
+[004] TOKEN: SEMICOLON            LEXEME: ';'
+------------------------------------------------------------
+Total parser tokens: 7
+Lexical Analysis: SUCCESS (no lexical errors)
 
-Abstract Syntax Tree
---------------------
+===== Parsing =====
+Parsing successful.
+
+===== Abstract Syntax Tree =====
 PROGRAM
     ASSIGNMENT (z)
         INT (99)
     PRINT
         IDENTIFIER (z)
 
-====================================
-Semantic Analysis
-====================================
+===== Semantic Analysis =====
+Semantic Analysis: FAILED (2 error(s))
 
+===== Symbol Table =====
+Name            Type       Scope      Line      
+--------------------------------------------------
+(no variables declared)
 
-2 semantic error(s) found. Skipping code generation.
+===== Three Address Code (TAC) =====
+Status: NOT GENERATED
+Reason: Semantic analysis failed with 2 error(s).
 exit code: 1

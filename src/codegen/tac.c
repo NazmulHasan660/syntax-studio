@@ -5,99 +5,151 @@
 #include <string.h>
 #include <stdarg.h>
 
-typedef struct
-{
-    char **lines;
-    int count;
-    int capacity;
-} TACList;
-
-static TACList tac_list = {NULL, 0, 0};
-static int temp_count = 0;
+static int temporary_count = 0;
 static int label_count = 0;
 
-static void tac_emit(const char *fmt, ...)
+static void emit_tac(
+    TACList *list,
+    const char *format,
+    ...
+)
 {
     char buffer[256];
-    va_list args;
+    va_list arguments;
 
-    va_start(args, fmt);
-    vsnprintf(buffer, sizeof(buffer), fmt, args);
-    va_end(args);
+    va_start(arguments, format);
+    vsnprintf(
+        buffer,
+        sizeof(buffer),
+        format,
+        arguments
+    );
+    va_end(arguments);
 
-    if (tac_list.count == tac_list.capacity)
+    if (list->count == list->capacity)
     {
-        tac_list.capacity = tac_list.capacity == 0 ? 32 : tac_list.capacity * 2;
-        tac_list.lines = (char **)realloc(tac_list.lines,
-                                           tac_list.capacity * sizeof(char *));
+        if (list->capacity == 0)
+            list->capacity = 32;
+        else
+            list->capacity *= 2;
 
-        if (tac_list.lines == NULL)
+        list->lines = (char **)realloc(
+            list->lines,
+            list->capacity * sizeof(char *)
+        );
+
+        if (list->lines == NULL)
         {
-            fprintf(stderr, "Memory allocation failed.\n");
+            fprintf(
+                stderr,
+                "Memory allocation failed for TAC.\n"
+            );
             exit(EXIT_FAILURE);
         }
     }
 
-    tac_list.lines[tac_list.count++] = strdup(buffer);
+    list->lines[list->count] = strdup(buffer);
+    list->count++;
 }
 
-static char *new_temp(void)
+static char *create_temporary(void)
 {
     char buffer[16];
-    snprintf(buffer, sizeof(buffer), "t%d", temp_count++);
+
+    snprintf(
+        buffer,
+        sizeof(buffer),
+        "t%d",
+        temporary_count++
+    );
+
     return strdup(buffer);
 }
 
-static char *new_label(void)
+static char *create_label(void)
 {
     char buffer[16];
-    snprintf(buffer, sizeof(buffer), "L%d", label_count++);
+
+    snprintf(
+        buffer,
+        sizeof(buffer),
+        "L%d",
+        label_count++
+    );
+
     return strdup(buffer);
 }
 
-static void gen_stmt(ASTNode *stmt);
-static void gen_stmt_list(ASTNode *list);
-
-/*
- * Generates code for an expression and returns the name of the
- * place (variable, literal, or temp) holding its value. Caller
- * owns the returned string and must free() it.
- */
-static char *gen_expr(ASTNode *expr)
+static char *generate_expression(
+    ASTNode *expression,
+    TACList *list
+)
 {
-    if (expr == NULL)
+    if (expression == NULL)
         return strdup("?");
 
-    switch (expr->type)
+    switch (expression->type)
     {
         case NODE_IDENTIFIER:
         case NODE_INT_LITERAL:
         case NODE_FLOAT_LITERAL:
         case NODE_BOOL_LITERAL:
-            return strdup(expr->text);
+            return strdup(expression->text);
 
         case NODE_UNARY_OP:
         {
-            char *operand = gen_expr(expr->left);
-            char *temp = new_temp();
+            char *operand =
+                generate_expression(
+                    expression->left,
+                    list
+                );
 
-            tac_emit("%s = %s%s", temp, expr->text, operand);
+            char *temporary =
+                create_temporary();
+
+            emit_tac(
+                list,
+                "%s = %s%s",
+                temporary,
+                expression->text,
+                operand
+            );
 
             free(operand);
-            return temp;
+
+            return temporary;
         }
 
         case NODE_BINARY_OP:
         {
-            char *l = gen_expr(expr->left);
-            char *r = gen_expr(expr->right);
-            char *temp = new_temp();
+            char *left =
+                generate_expression(
+                    expression->left,
+                    list
+                );
 
-            tac_emit("%s = %s %s %s", temp, l, expr->text, r);
+            char *right =
+                generate_expression(
+                    expression->right,
+                    list
+                );
 
-            free(l);
-            free(r);
-            return temp;
+            char *temporary =
+                create_temporary();
+
+            emit_tac(
+                list,
+                "%s = %s %s %s",
+                temporary,
+                left,
+                expression->text,
+                right
+            );
+
+            free(left);
+            free(right);
+
+            return temporary;
         }
 
         default:
@@ -105,126 +157,430 @@ static char *gen_expr(ASTNode *expr)
     }
 }
 
-static void gen_stmt(ASTNode *stmt)
+static void generate_statement(
+    ASTNode *statement,
+    TACList *list
+);
+
+static void generate_statement_list(
+    ASTNode *statement_list,
+    TACList *list
+)
 {
-    if (stmt == NULL)
+    for (
+        ASTNode *statement = statement_list;
+        statement != NULL;
+        statement = statement->next
+    )
+    {
+        generate_statement(
+            statement,
+            list
+        );
+    }
+}
+
+static void generate_statement(
+    ASTNode *statement,
+    TACList *list
+)
+{
+    if (statement == NULL)
         return;
 
-    switch (stmt->type)
+    switch (statement->type)
     {
         case NODE_DECLARATION:
-            /* No runtime instruction needed; kept as a comment for readability. */
-            tac_emit("// declare %s : %s", stmt->text, stmt->data_type);
+        {
+            emit_tac(
+                list,
+                "// declare %s : %s",
+                statement->text,
+                statement->data_type
+                    ? statement->data_type
+                    : "unknown"
+            );
+
             break;
+        }
 
         case NODE_ASSIGNMENT:
         {
-            char *rhs = gen_expr(stmt->left);
-            tac_emit("%s = %s", stmt->text, rhs);
-            free(rhs);
+            char *right =
+                generate_expression(
+                    statement->left,
+                    list
+                );
+
+            emit_tac(
+                list,
+                "%s = %s",
+                statement->text,
+                right
+            );
+
+            free(right);
             break;
         }
 
         case NODE_PRINT:
         {
-            char *val = gen_expr(stmt->left);
-            tac_emit("print %s", val);
-            free(val);
+            char *value =
+                generate_expression(
+                    statement->left,
+                    list
+                );
+
+            emit_tac(
+                list,
+                "print %s",
+                value
+            );
+
+            free(value);
             break;
         }
 
         case NODE_IF:
         {
-            char *cond = gen_expr(stmt->left);
+            char *condition =
+                generate_expression(
+                    statement->left,
+                    list
+                );
 
-            if (stmt->third == NULL)
+            if (statement->third == NULL)
             {
-                char *Lend = new_label();
+                char *end_label =
+                    create_label();
 
-                tac_emit("ifFalse %s goto %s", cond, Lend);
-                gen_stmt(stmt->right); /* then-block */
-                tac_emit("%s:", Lend);
+                emit_tac(
+                    list,
+                    "ifFalse %s goto %s",
+                    condition,
+                    end_label
+                );
 
-                free(Lend);
+                generate_statement(
+                    statement->right,
+                    list
+                );
+
+                emit_tac(
+                    list,
+                    "%s:",
+                    end_label
+                );
+
+                free(end_label);
             }
             else
             {
-                char *Lelse = new_label();
-                char *Lend = new_label();
+                char *else_label =
+                    create_label();
 
-                tac_emit("ifFalse %s goto %s", cond, Lelse);
-                gen_stmt(stmt->right); /* then-block */
-                tac_emit("goto %s", Lend);
-                tac_emit("%s:", Lelse);
-                gen_stmt(stmt->third); /* else-block */
-                tac_emit("%s:", Lend);
+                char *end_label =
+                    create_label();
 
-                free(Lelse);
-                free(Lend);
+                emit_tac(
+                    list,
+                    "ifFalse %s goto %s",
+                    condition,
+                    else_label
+                );
+
+                generate_statement(
+                    statement->right,
+                    list
+                );
+
+                emit_tac(
+                    list,
+                    "goto %s",
+                    end_label
+                );
+
+                emit_tac(
+                    list,
+                    "%s:",
+                    else_label
+                );
+
+                generate_statement(
+                    statement->third,
+                    list
+                );
+
+                emit_tac(
+                    list,
+                    "%s:",
+                    end_label
+                );
+
+                free(else_label);
+                free(end_label);
             }
 
-            free(cond);
+            free(condition);
             break;
         }
 
         case NODE_WHILE:
         {
-            char *Lstart = new_label();
-            char *Lend = new_label();
+            char *start_label =
+                create_label();
 
-            tac_emit("%s:", Lstart);
+            char *end_label =
+                create_label();
 
-            char *cond = gen_expr(stmt->left);
-            tac_emit("ifFalse %s goto %s", cond, Lend);
-            free(cond);
+            emit_tac(
+                list,
+                "%s:",
+                start_label
+            );
 
-            gen_stmt(stmt->right); /* body block */
+            char *condition =
+                generate_expression(
+                    statement->left,
+                    list
+                );
 
-            tac_emit("goto %s", Lstart);
-            tac_emit("%s:", Lend);
+            emit_tac(
+                list,
+                "ifFalse %s goto %s",
+                condition,
+                end_label
+            );
 
-            free(Lstart);
-            free(Lend);
+            free(condition);
+
+            generate_statement(
+                statement->right,
+                list
+            );
+
+            emit_tac(
+                list,
+                "goto %s",
+                start_label
+            );
+
+            emit_tac(
+                list,
+                "%s:",
+                end_label
+            );
+
+            free(start_label);
+            free(end_label);
+            break;
+        }
+
+        case NODE_FOR:
+        {
+            char *start_label =
+                create_label();
+
+            char *end_label =
+                create_label();
+
+            emit_tac(
+                list,
+                "%s:",
+                start_label
+            );
+
+            char *condition =
+                generate_expression(
+                    statement->left,
+                    list
+                );
+
+            emit_tac(
+                list,
+                "ifFalse %s goto %s",
+                condition,
+                end_label
+            );
+
+            free(condition);
+
+            generate_statement(
+                statement->right,
+                list
+            );
+
+            if (statement->third != NULL)
+            {
+                generate_statement(
+                    statement->third,
+                    list
+                );
+            }
+
+            emit_tac(
+                list,
+                "goto %s",
+                start_label
+            );
+
+            emit_tac(
+                list,
+                "%s:",
+                end_label
+            );
+
+            free(start_label);
+            free(end_label);
+            break;
+        }
+
+        case NODE_DO_WHILE:
+        {
+            char *start_label =
+                create_label();
+
+            char *end_label =
+                create_label();
+
+            emit_tac(
+                list,
+                "%s:",
+                start_label
+            );
+
+            generate_statement(
+                statement->right,
+                list
+            );
+
+            char *condition =
+                generate_expression(
+                    statement->left,
+                    list
+                );
+
+            emit_tac(
+                list,
+                "ifFalse %s goto %s",
+                condition,
+                end_label
+            );
+
+            emit_tac(
+                list,
+                "goto %s",
+                start_label
+            );
+
+            emit_tac(
+                list,
+                "%s:",
+                end_label
+            );
+
+            free(condition);
+            free(start_label);
+            free(end_label);
             break;
         }
 
         case NODE_BLOCK:
-            gen_stmt_list(stmt->left);
-            break;
+        {
+            generate_statement_list(
+                statement->left,
+                list
+            );
 
+            break;
+        }
+
+        /*
+         * Return instructions are ignored in this
+         * educational TAC subset.
+         */
+        case NODE_UNARY_OP:
         default:
             break;
     }
 }
 
-static void gen_stmt_list(ASTNode *list)
+TACList generate_tac(ASTNode *root)
 {
-    for (ASTNode *s = list; s != NULL; s = s->next)
-        gen_stmt(s);
-}
+    TACList list;
 
-void generate_tac(ASTNode *root)
-{
-    temp_count = 0;
+    list.lines = NULL;
+    list.count = 0;
+    list.capacity = 0;
+
+    temporary_count = 0;
     label_count = 0;
-    tac_list.count = 0;
 
-    if (root != NULL && root->type == NODE_PROGRAM)
-        gen_stmt_list(root->left);
-
-    for (int i = 0; i < tac_list.count; i++)
+    if (
+        root != NULL &&
+        root->type == NODE_PROGRAM
+    )
     {
-        /* Labels get printed flush-left, everything else indented. */
-        if (strchr(tac_list.lines[i], ':') != NULL &&
-            strncmp(tac_list.lines[i], "//", 2) != 0)
-            printf("%s\n", tac_list.lines[i]);
-        else
-            printf("    %s\n", tac_list.lines[i]);
-
-        free(tac_list.lines[i]);
+        generate_statement_list(
+            root->left,
+            &list
+        );
     }
 
-    free(tac_list.lines);
-    tac_list.lines = NULL;
-    tac_list.capacity = 0;
+    return list;
+}
+
+void print_tac(const TACList *list)
+{
+    if (
+        list == NULL ||
+        list->lines == NULL
+    )
+    {
+        return;
+    }
+
+    for (int i = 0; i < list->count; i++)
+    {
+        /*
+         * Labels are printed without indentation.
+         */
+        if (
+            strchr(list->lines[i], ':') != NULL &&
+            strncmp(list->lines[i], "//", 2) != 0
+        )
+        {
+            printf(
+                "%s\n",
+                list->lines[i]
+            );
+        }
+        else
+        {
+            printf(
+                "    %s\n",
+                list->lines[i]
+            );
+        }
+    }
+}
+
+void free_tac(TACList *list)
+{
+    if (
+        list == NULL ||
+        list->lines == NULL
+    )
+    {
+        return;
+    }
+
+    for (int i = 0; i < list->count; i++)
+        free(list->lines[i]);
+
+    free(list->lines);
+
+    list->lines = NULL;
+    list->count = 0;
+    list->capacity = 0;
 }

@@ -1,13 +1,6 @@
 """
-compiler_runner.py
-
-Talks to the compiled Syntax Studio binary (the C program built from
-src/) via subprocess, and parses its stdout/stderr into clean
-sections (AST, Semantic Analysis, Three Address Code, Errors) that
-the Tkinter GUI can display in separate panes.
-
-This file does NOT depend on tkinter -- it can be imported and
-tested on its own.
+Runs the Syntax Studio compiler and separates
+the terminal output into six compiler phases.
 """
 
 import os
@@ -15,121 +8,235 @@ import re
 import subprocess
 import tempfile
 
-# Exact markers printed by src/main.c -- keep these in sync if main.c
-# ever changes its printf() headers.
-AST_MARKER = "Abstract Syntax Tree\n--------------------\n"
-SEM_MARKER = "Semantic Analysis\n====================================\n\n"
-TAC_MARKER = "Three Address Code\n====================================\n\n"
 
-# Matches a trailing "====...====" separator line (with surrounding
-# blank lines) that main.c prints just before the NEXT section header.
-_TRAILING_SEPARATOR = re.compile(r"(\n=+\s*)+$")
+LEX_MARKER = "===== Lexical Analysis ====="
+PARSE_MARKER = "===== Parsing ====="
+AST_MARKER = "===== Abstract Syntax Tree ====="
+SEMANTIC_MARKER = "===== Semantic Analysis ====="
+SYMBOL_MARKER = "===== Symbol Table ====="
+TAC_MARKER = "===== Three Address Code (TAC) ====="
 
 
-def _clean_section(text):
-    """Strips a trailing '====' separator line left over from the
-    next section's header, then trims surrounding whitespace."""
-    return _TRAILING_SEPARATOR.sub("", text).strip()
+MARKERS = [
+    LEX_MARKER,
+    PARSE_MARKER,
+    AST_MARKER,
+    SEMANTIC_MARKER,
+    SYMBOL_MARKER,
+    TAC_MARKER,
+]
+
+
+DIAGNOSTIC_RE = re.compile(
+    r"^(Lexical|Syntax|Semantic) Error at line \d+",
+    re.IGNORECASE
+)
+
+
+def extract_section(
+    stdout,
+    current_marker,
+    next_marker=None
+):
+    """
+    Extracts one compiler phase from stdout.
+    """
+
+    start = stdout.find(current_marker)
+
+    if start == -1:
+        return ""
+
+    start += len(current_marker)
+
+    if next_marker is None:
+        end = len(stdout)
+    else:
+        end = stdout.find(
+            next_marker,
+            start
+        )
+
+        if end == -1:
+            end = len(stdout)
+
+    return stdout[start:end].strip()
 
 
 def parse_output(stdout, stderr):
     """
-    Splits the compiler's raw stdout/stderr into a dictionary with:
-      parsed            -> bool, True if "Parsing Successful" was printed
-      ast               -> str, the AST dump
-      semantic_summary  -> str, e.g. "No semantic errors found." or
-                            "2 semantic error(s) found. Skipping code generation."
-      semantic_errors   -> list[str], one entry per "Semantic Error at line ..." line
-      tac               -> str, the generated three-address code (empty if skipped)
-      raw_stdout        -> str, unmodified stdout
-      raw_stderr        -> str, unmodified stderr
+    Converts raw compiler output into structured
+    sections for the Tkinter GUI.
     """
-    result = {
-        "parsed": "Parsing Successful" in stdout,
-        "ast": "",
-        "semantic_summary": "",
-        "semantic_errors": [],
-        "tac": "",
+
+    sections = []
+
+    for index, marker in enumerate(MARKERS):
+        if index + 1 < len(MARKERS):
+            next_marker = MARKERS[index + 1]
+        else:
+            next_marker = None
+
+        section = extract_section(
+            stdout,
+            marker,
+            next_marker
+        )
+
+        sections.append(section)
+
+    diagnostics = []
+
+    for line in stderr.splitlines():
+        clean_line = line.strip()
+
+        if DIAGNOSTIC_RE.match(clean_line):
+            diagnostics.append(clean_line)
+
+    lexical_errors = [
+        error
+        for error in diagnostics
+        if error.lower().startswith("lexical")
+    ]
+
+    syntax_errors = [
+        error
+        for error in diagnostics
+        if error.lower().startswith("syntax")
+    ]
+
+    semantic_errors = [
+        error
+        for error in diagnostics
+        if error.lower().startswith("semantic")
+    ]
+
+    return {
+        "tokens": sections[0],
+        "parsing": sections[1],
+
+        "parsed":
+            "Parsing successful." in sections[1],
+
+        "ast": sections[2],
+        "semantic_summary": sections[3],
+        "symbol_table": sections[4],
+        "tac": sections[5],
+
+        "lexical_errors": lexical_errors,
+        "syntax_errors": syntax_errors,
+        "semantic_errors": semantic_errors,
+        "diagnostics": diagnostics,
+
         "raw_stdout": stdout,
         "raw_stderr": stderr,
     }
 
-    result["semantic_errors"] = [
-        line.strip() for line in stderr.splitlines() if line.strip()
-    ]
 
-    if not result["parsed"]:
-        # Syntax error: lexer/parser diagnostics land on stderr,
-        # nothing structured to pull out of stdout.
-        return result
-
-    ast_start = stdout.find(AST_MARKER)
-    sem_start = stdout.find(SEM_MARKER)
-    tac_start = stdout.find(TAC_MARKER)
-
-    if ast_start != -1:
-        ast_end = sem_start if sem_start != -1 else len(stdout)
-        result["ast"] = _clean_section(stdout[ast_start + len(AST_MARKER): ast_end])
-
-    if sem_start != -1:
-        sem_end = tac_start if tac_start != -1 else len(stdout)
-        result["semantic_summary"] = _clean_section(stdout[sem_start + len(SEM_MARKER): sem_end])
-
-    if tac_start != -1:
-        result["tac"] = stdout[tac_start + len(TAC_MARKER):].strip()
-
-    return result
-
-
-def run_compiler(source_path, compiler_path="./compiler", timeout=5):
+def run_compiler(
+    source_path,
+    compiler_path="./compiler",
+    timeout=5,
+    language="C"
+):
     """
-    Runs the compiler binary on an existing .src file on disk.
-    Returns the parsed dict from parse_output(), plus:
-      returncode -> int
-    or, on failure to even launch the binary:
-      error -> str
+    Runs the compiled C compiler binary on a
+    source-code file.
     """
+
     if not os.path.isfile(compiler_path):
-        return {"error": "Compiler binary not found at '{}'. "
-                          "Build it first with 'make'.".format(compiler_path)}
+        return {
+            "error":
+                "Compiler binary not found at '{}'. "
+                "Build it first with 'make'."
+                .format(compiler_path)
+        }
 
     try:
-        proc = subprocess.run(
-            [compiler_path, source_path],
+        process = subprocess.run(
+            [
+                compiler_path,
+                source_path,
+                language
+            ],
             capture_output=True,
             text=True,
             timeout=timeout,
         )
-    except subprocess.TimeoutExpired:
-        return {"error": "Compiler timed out after {}s "
-                          "(check for an infinite 'while' loop in the source)."
-                          .format(timeout)}
-    except OSError as exc:
-        return {"error": "Could not execute '{}': {}".format(compiler_path, exc)}
 
-    result = parse_output(proc.stdout, proc.stderr)
-    result["returncode"] = proc.returncode
+    except subprocess.TimeoutExpired:
+        return {
+            "error":
+                "Compiler timed out after {} seconds."
+                .format(timeout)
+        }
+
+    except OSError as error:
+        return {
+            "error":
+                "Could not execute '{}': {}"
+                .format(
+                    compiler_path,
+                    error
+                )
+        }
+
+    result = parse_output(
+        process.stdout,
+        process.stderr
+    )
+
+    result["returncode"] = process.returncode
+
     return result
 
 
-def run_source(source_text, compiler_path="./compiler", timeout=5):
+def run_source(
+    source_text,
+    compiler_path="./compiler",
+    timeout=5,
+    language="C"
+):
     """
-    Convenience wrapper: writes source_text to a temp .src file,
-    runs the compiler on it, then cleans up. Use this when the GUI
-    only has in-editor text and no saved file yet.
+    Saves editor text into a temporary source file,
+    runs the compiler and then deletes the file.
     """
-    tmp_path = None
+
+    extension = {
+        "C": ".c",
+        "C++": ".cpp",
+        "Java": ".java"
+    }.get(
+        language,
+        ".src"
+    )
+
+    temporary_path = None
+
     try:
         with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".src", delete=False, encoding="utf-8"
-        ) as tmp:
-            tmp.write(source_text)
-            tmp_path = tmp.name
+            mode="w",
+            suffix=extension,
+            delete=False,
+            encoding="utf-8"
+        ) as temporary_file:
 
-        return run_compiler(tmp_path, compiler_path, timeout)
+            temporary_file.write(source_text)
+            temporary_path = temporary_file.name
+
+        return run_compiler(
+            temporary_path,
+            compiler_path,
+            timeout,
+            language
+        )
+
     finally:
-        if tmp_path and os.path.exists(tmp_path):
+        if (
+            temporary_path and
+            os.path.exists(temporary_path)
+        ):
             try:
-                os.remove(tmp_path)
+                os.remove(temporary_path)
             except OSError:
                 pass

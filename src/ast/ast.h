@@ -3,7 +3,7 @@
 
 typedef enum
 {
-    /* Program */
+    /* Program Structure */
     NODE_PROGRAM,
 
     /* Statements */
@@ -12,6 +12,8 @@ typedef enum
     NODE_ASSIGNMENT,
     NODE_IF,
     NODE_WHILE,
+    NODE_FOR,
+    NODE_DO_WHILE,
     NODE_PRINT,
 
     /* Expressions */
@@ -30,27 +32,26 @@ typedef struct ASTNode
 {
     NodeType type;
 
-    /* Identifier / Operator / Literal */
+    /* Identifier, operator or literal text */
     char *text;
 
-    /* Inferred / declared type used by semantic analysis */
+    /* Declared or inferred type */
     char *data_type;
 
-    /* Source Line Number */
+    /* Source line number */
     int line;
 
-    /* Tree Children */
+    /* Tree children */
     struct ASTNode *left;
     struct ASTNode *right;
     struct ASTNode *third;
 
-    /* Linked Statement List */
+    /* Linked statement list */
     struct ASTNode *next;
 
 } ASTNode;
 
-
-/* Constructors */
+/* Constructor */
 ASTNode *create_node(NodeType type, char *text);
 
 /* Utilities */
