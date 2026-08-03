@@ -151,7 +151,7 @@ class SyntaxStudioApp(tk.Tk):
         except tk.TclError:
             pass
         style.configure('TNotebook', background=BG, borderwidth=0)
-        style.configure('TNotebook.Tab', padding=(14, 6), font=UI)
+        style.configure('TNotebook.Tab', padding=(8, 6), font=(UI[0], 9))
         style.configure('Treeview', rowheight=22, font=MONO_SM, fieldbackground=WHITE)
         style.configure('Treeview.Heading', font=(UI[0], 9, 'bold'))
         style.configure('TPanedwindow', background=BG)
@@ -220,7 +220,7 @@ class SyntaxStudioApp(tk.Tk):
         self.pipeline_row.pack(fill=tk.X, padx=14, pady=(10, 8))
 
     def _refresh_pipeline(self, statuses):
-        names = ('Lexer', 'Parser', 'AST', 'Semantic', 'Symbol', 'TAC')
+        names = ('Lexer (Tokens)', 'Parser (AST)', 'Semantic', 'Intermediate (TAC)', 'Optimizer', 'Target (Assembly)')
         icons = {'ok': '✓', 'fail': '✕', 'skip': '–'}
         for widget in self.pipeline_row.winfo_children():
             widget.destroy()
@@ -278,18 +278,24 @@ class SyntaxStudioApp(tk.Tk):
         tk.Label(output_header, text='Compiler Pipeline Phase Inspector', font=(UI[0], 10, 'bold'), bg=WHITE).pack(side=tk.LEFT)
         self.notebook = ttk.Notebook(right_panel)
         self.notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=4, pady=(0, 4))
-        self.tokens_view = self._make_text_tab('1. Lexer')
-        self.parsing_view = self._make_text_tab('2. Parser')
-        self._build_ast_tab()
-        self.semantic_view = self._make_text_tab('4. Semantic')
-        self.symbol_view = self._make_text_tab('5. Symbols')
-        self.tac_view = self._make_text_tab('6. TAC')
+        self.tokens_view = self._make_text_tab('1. Lexer (Tokens)')
+        self._build_parser_ast_tab()
+        self.semantic_view = self._make_text_tab('3. Semantic')
+        self.tac_view = self._make_text_tab('4. Intermediate (TAC)')
+        self.optimizer_view = self._make_text_tab('5. Optimizer')
+        self.assembly_view = self._make_text_tab('6. Target (Assembly)')
 
-    def _build_ast_tab(self):
+    def _build_parser_ast_tab(self):
         frame = ttk.Frame(self.notebook)
-        self.notebook.add(frame, text='3. AST')
-        self.ast_tree = ttk.Treeview(frame, show='tree')
-        scrollbar = ttk.Scrollbar(frame, orient='vertical', command=self.ast_tree.yview)
+        self.notebook.add(frame, text='2. Parser (AST)')
+        self.parsing_view = tk.Text(frame, height=3, wrap='word', font=MONO_SM, state='disabled', bg=WHITE, bd=0, padx=6)
+        self.parsing_view.pack(fill=tk.X)
+        self.parsing_view.tag_configure('error', foreground=RED)
+        self.parsing_view.tag_configure('ok', foreground=GREEN)
+        tree_frame = ttk.Frame(frame)
+        tree_frame.pack(fill=tk.BOTH, expand=True)
+        self.ast_tree = ttk.Treeview(tree_frame, show='tree')
+        scrollbar = ttk.Scrollbar(tree_frame, orient='vertical', command=self.ast_tree.yview)
         self.ast_tree.configure(yscrollcommand=scrollbar.set)
         self.ast_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -472,7 +478,7 @@ class SyntaxStudioApp(tk.Tk):
         self._update_file_label()
         self._refresh_pipeline(['skip'] * 6)
         self.error_badge.pack_forget()
-        for output_view in (self.tokens_view, self.parsing_view, self.semantic_view, self.symbol_view, self.tac_view, self.console_view):
+        for output_view in (self.tokens_view, self.parsing_view, self.semantic_view, self.tac_view, self.optimizer_view, self.assembly_view, self.console_view):
             self._set_text(output_view, '')
         self.ast_tree.delete(*self.ast_tree.get_children())
         self.status_var.set('Ready.')
@@ -492,15 +498,37 @@ class SyntaxStudioApp(tk.Tk):
             return
         self._display_result(result)
 
+    @staticmethod
+    def _output_section(output, title, next_title=None):
+        marker = '===== {} ====='.format(title)
+        start = output.find(marker)
+        if start < 0:
+            return ''
+        start += len(marker)
+        if next_title:
+            end = output.find('===== {} ====='.format(next_title), start)
+            if end < 0:
+                end = len(output)
+        else:
+            end = len(output)
+        return output[start:end].strip()
+
+    def _prepare_six_phases(self, result):
+        raw = result.get('raw_stdout', '')
+        result['tac'] = self._output_section(raw, 'Three Address Code (TAC)', 'Code Optimization') or result.get('tac', '')
+        result['optimizer'] = self._output_section(raw, 'Code Optimization', 'Target Code Generation (Assembly)')
+        result['assembly'] = self._output_section(raw, 'Target Code Generation (Assembly)')
+
     def _pipeline_status(self, result):
         if result['lexical_errors']:
             return ['fail', 'skip', 'skip', 'skip', 'skip', 'skip']
         if not result['parsed']:
             return ['ok', 'fail', 'skip', 'skip', 'skip', 'skip']
-        semantic_ok = not result['semantic_errors']
-        symbol_table_ok = bool(result['symbol_table'].strip()) and 'SKIPPED' not in result['symbol_table']
-        tac_ok = semantic_ok and bool(result['tac'].strip()) and ('SKIPPED' not in result['tac'])
-        return ['ok', 'ok', 'ok', 'ok' if semantic_ok else 'fail', 'ok' if symbol_table_ok else 'skip', 'ok' if tac_ok else 'skip']
+        semantic_ok = not result['semantic_errors'] and 'SKIPPED' not in result['semantic_summary']
+        tac_ok = semantic_ok and bool(result['tac'].strip()) and 'NOT GENERATED' not in result['tac']
+        optimizer_ok = tac_ok and bool(result['optimizer'].strip()) and 'NOT EXECUTED' not in result['optimizer']
+        assembly_ok = optimizer_ok and bool(result['assembly'].strip()) and 'NOT GENERATED' not in result['assembly']
+        return ['ok', 'ok', 'ok' if semantic_ok else 'fail', 'ok' if tac_ok else 'skip', 'ok' if optimizer_ok else 'skip', 'ok' if assembly_ok else 'skip']
 
     def _parse_errors(self, stderr_text):
         rows = []
@@ -522,6 +550,7 @@ class SyntaxStudioApp(tk.Tk):
             stack[depth] = node
 
     def _display_result(self, result):
+        self._prepare_six_phases(result)
         self._refresh_pipeline(self._pipeline_status(result))
         self._populate_ast(result['ast'])
         self._set_text(self.tokens_view, result['tokens'] or '(not reached)')
@@ -532,10 +561,13 @@ class SyntaxStudioApp(tk.Tk):
         if result['semantic_errors']:
             semantic_output.append('')
             semantic_output.extend(result['semantic_errors'])
+        if result['symbol_table']:
+            semantic_output.extend(('', 'Symbol Table', '-' * 48, result['symbol_table']))
         semantic_ok = result['parsed'] and bool(result['semantic_summary']) and (not result['semantic_errors']) and ('SKIPPED' not in result['semantic_summary'])
         self._set_text(self.semantic_view, '\n'.join(semantic_output) or '(not reached)', 'ok' if semantic_ok else 'error')
-        self._set_text(self.symbol_view, result['symbol_table'] or '(not generated)')
         self._set_text(self.tac_view, result['tac'] or '(not generated -- see Semantic tab)')
+        self._set_text(self.optimizer_view, result['optimizer'] or '(not generated -- see Intermediate tab)')
+        self._set_text(self.assembly_view, result['assembly'] or '(not generated -- see Optimizer tab)')
         error_rows = self._parse_errors(result['raw_stderr'])
         failed = result['returncode'] != 0
         banner = 'BUILD FAILED: COMPILER ERROR ENCOUNTERED' if failed else 'BUILD SUCCESSFUL: ALL 6 PHASES COMPLETED'

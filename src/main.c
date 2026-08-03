@@ -6,6 +6,8 @@
 #include "semantic/semantic.h"
 #include "symbol_table/symbol_table.h"
 #include "codegen/tac.h"
+#include "optimizer/optimizer.h"
+#include "codegen/assembly.h"
 
 
 extern FILE *yyin;
@@ -109,18 +111,11 @@ static FILE *open_source(
  */
 static void print_not_executed_after_lexical(void)
 {
-    print_section("Parsing");
+    print_section("Parser (AST)");
 
     printf(
         "Status: NOT EXECUTED\n"
         "Reason: Lexical analysis failed.\n"
-    );
-
-    print_section("Abstract Syntax Tree");
-
-    printf(
-        "Status: NOT GENERATED\n"
-        "Reason: Parsing was not completed.\n"
     );
 
     print_section("Semantic Analysis");
@@ -130,18 +125,25 @@ static void print_not_executed_after_lexical(void)
         "Reason: No valid AST was produced.\n"
     );
 
-    print_section("Symbol Table");
-
-    printf(
-        "Status: NOT GENERATED\n"
-        "Reason: Semantic analysis was not executed.\n"
-    );
-
-    print_section("Three Address Code (TAC)");
+    print_section("Intermediate Code (TAC)");
 
     printf(
         "Status: NOT GENERATED\n"
         "Reason: Compilation stopped after lexical analysis.\n"
+    );
+
+    print_section("Code Optimization");
+
+    printf(
+        "Status: NOT EXECUTED\n"
+        "Reason: No TAC was generated.\n"
+    );
+
+    print_section("Target Code Generation (Assembly)");
+
+    printf(
+        "Status: NOT GENERATED\n"
+        "Reason: No optimized TAC was available.\n"
     );
 
     printf(
@@ -158,13 +160,6 @@ static void print_not_executed_after_lexical(void)
  */
 static void print_not_executed_after_parsing(void)
 {
-    print_section("Abstract Syntax Tree");
-
-    printf(
-        "Status: NOT GENERATED\n"
-        "Reason: Parsing failed.\n"
-    );
-
     print_section("Semantic Analysis");
 
     printf(
@@ -172,18 +167,25 @@ static void print_not_executed_after_parsing(void)
         "Reason: No valid AST was produced.\n"
     );
 
-    print_section("Symbol Table");
-
-    printf(
-        "Status: NOT GENERATED\n"
-        "Reason: Semantic analysis was not executed.\n"
-    );
-
-    print_section("Three Address Code (TAC)");
+    print_section("Intermediate Code (TAC)");
 
     printf(
         "Status: NOT GENERATED\n"
         "Reason: Compilation stopped after parsing.\n"
+    );
+
+    print_section("Code Optimization");
+
+    printf(
+        "Status: NOT EXECUTED\n"
+        "Reason: No TAC was generated.\n"
+    );
+
+    print_section("Target Code Generation (Assembly)");
+
+    printf(
+        "Status: NOT GENERATED\n"
+        "Reason: No optimized TAC was available.\n"
     );
 
     printf(
@@ -293,11 +295,11 @@ int main(
 
     /*
      * ===================================================
-     * Phase 2: Parsing
+     * Phase 2: Parser (AST)
      * ===================================================
      */
     print_section(
-        "Parsing"
+        "Parser (AST)"
     );
 
     yyin = open_source(
@@ -341,16 +343,8 @@ int main(
     }
 
     printf(
-        "Parsing successful.\n"
-    );
-
-    /*
-     * ===================================================
-     * Phase 3: Abstract Syntax Tree
-     * ===================================================
-     */
-    print_section(
-        "Abstract Syntax Tree"
+        "Parsing successful.\n\n"
+        "Abstract Syntax Tree:\n"
     );
 
     if (root != NULL)
@@ -369,7 +363,7 @@ int main(
 
     /*
      * ===================================================
-     * Phase 4: Semantic Analysis
+     * Phase 3: Semantic Analysis (Symbol Table)
      * ===================================================
      */
     print_section(
@@ -395,30 +389,32 @@ int main(
         );
     }
 
-    /*
-     * ===================================================
-     * Phase 5: Symbol Table
-     * ===================================================
-     */
-    print_section(
-        "Symbol Table"
+    printf(
+        "\nSymbol Table:\n"
     );
 
     symtab_print();
 
     /*
      * ===================================================
-     * Phase 6: Three Address Code
+     * Phase 4: Intermediate Code (TAC)
      * ===================================================
      */
     print_section(
-        "Three Address Code (TAC)"
+        "Intermediate Code (TAC)"
     );
+
+    TACList tac;
+    tac.lines = NULL;
+    tac.count = 0;
+    tac.capacity = 0;
+
+    int tac_generated = 0;
 
     if (semantic_errors == 0)
     {
-        TACList tac =
-            generate_tac(root);
+        tac = generate_tac(root);
+        tac_generated = 1;
 
         print_tac(&tac);
 
@@ -428,8 +424,6 @@ int main(
                 "(no TAC instructions generated)\n"
             );
         }
-
-        free_tac(&tac);
     }
     else
     {
@@ -443,6 +437,85 @@ int main(
             semantic_errors
         );
     }
+
+    /*
+     * ===================================================
+     * Phase 5: Code Optimization (bonus, Section 14)
+     * ===================================================
+     */
+    print_section(
+        "Code Optimization"
+    );
+
+    TACList optimized_tac;
+    optimized_tac.lines = NULL;
+    optimized_tac.count = 0;
+    optimized_tac.capacity = 0;
+
+    int optimized = 0;
+
+    if (tac_generated)
+    {
+        optimized_tac = optimize_tac(&tac);
+        optimized = 1;
+
+        printf(
+            "Constant folding + constant propagation "
+            "applied (%d -> %d TAC lines):\n\n",
+            tac.count,
+            optimized_tac.count
+        );
+
+        print_tac(&optimized_tac);
+    }
+    else
+    {
+        printf(
+            "Status: NOT EXECUTED\n"
+        );
+
+        printf(
+            "Reason: No TAC was generated.\n"
+        );
+    }
+
+    /*
+     * ===================================================
+     * Phase 6: Target Code Generation (Assembly, bonus)
+     * ===================================================
+     */
+    print_section(
+        "Target Code Generation (Assembly)"
+    );
+
+    if (optimized)
+    {
+        char *assembly =
+            generate_assembly(&optimized_tac);
+
+        printf(
+            "%s",
+            assembly
+        );
+
+        free(assembly);
+    }
+    else
+    {
+        printf(
+            "Status: NOT GENERATED\n"
+        );
+
+        printf(
+            "Reason: No optimized TAC was available.\n"
+        );
+    }
+
+    if (optimized)
+        free_tac(&optimized_tac);
+
+    if (tac_generated)
+        free_tac(&tac);
 
     /*
      * Free all allocated compiler memory.

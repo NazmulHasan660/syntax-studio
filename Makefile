@@ -18,7 +18,9 @@ SRC = \
 	src/ast/ast.c \
 	src/semantic/semantic.c \
 	src/symbol_table/symbol_table.c \
-	src/codegen/tac.c
+	src/codegen/tac.c \
+	src/optimizer/optimizer.c \
+	src/codegen/assembly.c
 
 all: $(TARGET)
 

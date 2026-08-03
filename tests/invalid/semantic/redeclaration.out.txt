@@ -14,10 +14,10 @@ Line  Token                 Lexeme
 Total parser tokens: 6
 Lexical Analysis: SUCCESS (no lexical errors)
 
-===== Parsing =====
+===== Parser (AST) =====
 Parsing successful.
 
-===== Abstract Syntax Tree =====
+Abstract Syntax Tree:
 PROGRAM
     DECLARATION (x : int)
     DECLARATION (x : int)
@@ -25,12 +25,20 @@ PROGRAM
 ===== Semantic Analysis =====
 Semantic Analysis: FAILED (1 error(s))
 
-===== Symbol Table =====
+Symbol Table:
 Name            Type       Scope      Line      
 --------------------------------------------------
 x               int        0          3         
 
-===== Three Address Code (TAC) =====
+===== Intermediate Code (TAC) =====
 Status: NOT GENERATED
 Reason: Semantic analysis failed with 1 error(s).
+
+===== Code Optimization =====
+Status: NOT EXECUTED
+Reason: No TAC was generated.
+
+===== Target Code Generation (Assembly) =====
+Status: NOT GENERATED
+Reason: No optimized TAC was available.
 exit code: 1

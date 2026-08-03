@@ -76,10 +76,10 @@ Line  Token                 Lexeme
 Total parser tokens: 69
 Lexical Analysis: SUCCESS (no lexical errors)
 
-===== Parsing =====
+===== Parser (AST) =====
 Parsing successful.
 
-===== Abstract Syntax Tree =====
+Abstract Syntax Tree:
 PROGRAM
     DECLARATION (a : int)
     DECLARATION (b : int)
@@ -126,7 +126,7 @@ PROGRAM
 ===== Semantic Analysis =====
 Semantic analysis successful. No errors found.
 
-===== Symbol Table =====
+Symbol Table:
 Name            Type       Scope      Line      
 --------------------------------------------------
 a               int        0          6         
@@ -134,7 +134,7 @@ b               int        0          7
 c               int        0          8         
 f               float      0          9         
 
-===== Three Address Code (TAC) =====
+===== Intermediate Code (TAC) =====
     // declare a : int
     // declare b : int
     // declare c : int
@@ -160,4 +160,97 @@ f               float      0          9
     t7 = -b
     c = t7
     print c
+
+===== Code Optimization =====
+Constant folding + constant propagation applied (25 -> 24 TAC lines):
+
+    // declare a : int
+    // declare b : int
+    // declare c : int
+    // declare f : float
+    a = 10
+    b = 3
+    t0 = -a
+    c = t0
+    print c
+    t1 = -b
+    t2 = a - t1
+    c = t2
+    print c
+    t3 = a + b
+    t4 = -t3
+    c = t4
+    print c
+    f = -3.500000
+    print f
+    t6 = b + 1
+    b = t6
+    t7 = -b
+    c = t7
+    print c
+
+===== Target Code Generation (Assembly) =====
+SECTION .text
+GLOBAL _main
+
+_main:
+    PUSH EBP
+    MOV EBP, ESP
+
+    ; declare a : int
+    ; declare b : int
+    ; declare c : int
+    ; declare f : float
+    MOV EAX, 10
+    MOV [a], EAX
+    MOV EAX, 3
+    MOV [b], EAX
+    MOV EAX, a
+    NEG EAX
+    MOV [t0], EAX
+    MOV EAX, t0
+    MOV [c], EAX
+    MOV EAX, c
+    CALL PRINT_VALUE
+    MOV EAX, b
+    NEG EAX
+    MOV [t1], EAX
+    MOV EAX, a
+    SUB EAX, t1
+    MOV [t2], EAX
+    MOV EAX, t2
+    MOV [c], EAX
+    MOV EAX, c
+    CALL PRINT_VALUE
+    MOV EAX, a
+    ADD EAX, b
+    MOV [t3], EAX
+    MOV EAX, t3
+    NEG EAX
+    MOV [t4], EAX
+    MOV EAX, t4
+    MOV [c], EAX
+    MOV EAX, c
+    CALL PRINT_VALUE
+    MOV EAX, 3.500000
+    NEG EAX
+    MOV [f], EAX
+    MOV EAX, f
+    CALL PRINT_VALUE
+    MOV EAX, b
+    ADD EAX, 1
+    MOV [t6], EAX
+    MOV EAX, t6
+    MOV [b], EAX
+    MOV EAX, b
+    NEG EAX
+    MOV [t7], EAX
+    MOV EAX, t7
+    MOV [c], EAX
+    MOV EAX, c
+    CALL PRINT_VALUE
+
+    MOV ESP, EBP
+    POP EBP
+    RET
 exit code: 0

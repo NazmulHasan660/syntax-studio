@@ -35,10 +35,10 @@ Line  Token                 Lexeme
 Total parser tokens: 28
 Lexical Analysis: SUCCESS (no lexical errors)
 
-===== Parsing =====
+===== Parser (AST) =====
 Parsing successful.
 
-===== Abstract Syntax Tree =====
+Abstract Syntax Tree:
 PROGRAM
     DECLARATION (x : int)
     ASSIGNMENT (x)
@@ -59,13 +59,13 @@ PROGRAM
 ===== Semantic Analysis =====
 Semantic analysis successful. No errors found.
 
-===== Symbol Table =====
+Symbol Table:
 Name            Type       Scope      Line      
 --------------------------------------------------
 x               int        0          6         
 x               int        1          10        
 
-===== Three Address Code (TAC) =====
+===== Intermediate Code (TAC) =====
     // declare x : int
     x = 1
     t0 = x == 1
@@ -75,4 +75,47 @@ x               int        1          10
     print x
 L0:
     print x
+
+===== Code Optimization =====
+Constant folding + constant propagation applied (9 -> 9 TAC lines):
+
+    // declare x : int
+    x = 1
+    t0 = x == 1
+    ifFalse t0 goto L0
+    // declare x : int
+    x = 99
+    print x
+L0:
+    print x
+
+===== Target Code Generation (Assembly) =====
+SECTION .text
+GLOBAL _main
+
+_main:
+    PUSH EBP
+    MOV EBP, ESP
+
+    ; declare x : int
+    MOV EAX, 1
+    MOV [x], EAX
+    MOV EAX, x
+    CMP EAX, 1
+    SETE AL
+    MOV [t0], AL
+    CMP t0, 0
+    JE L0
+    ; declare x : int
+    MOV EAX, 99
+    MOV [x], EAX
+    MOV EAX, x
+    CALL PRINT_VALUE
+L0:
+    MOV EAX, x
+    CALL PRINT_VALUE
+
+    MOV ESP, EBP
+    POP EBP
+    RET
 exit code: 0

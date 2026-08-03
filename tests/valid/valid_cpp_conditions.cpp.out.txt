@@ -1,0 +1,177 @@
+
+===== Lexical Analysis =====
+Language: C++
+Line  Token                 Lexeme
+------------------------------------------------------------
+[001] TOKEN: DIRECTIVE            LEXEME: '#include <iostream>' (ignored)
+[002] TOKEN: NAMESPACE            LEXEME: 'using namespace std;' (ignored)
+[004] TOKEN: INT                  LEXEME: 'int'
+[004] TOKEN: ID                   LEXEME: 'x'
+[004] TOKEN: ASSIGN               LEXEME: '='
+[004] TOKEN: INT_CONST            LEXEME: '10'
+[004] TOKEN: SEMICOLON            LEXEME: ';'
+[005] TOKEN: INT                  LEXEME: 'int'
+[005] TOKEN: ID                   LEXEME: 'y'
+[005] TOKEN: ASSIGN               LEXEME: '='
+[005] TOKEN: INT_CONST            LEXEME: '3'
+[005] TOKEN: SEMICOLON            LEXEME: ';'
+[006] TOKEN: INT                  LEXEME: 'int'
+[006] TOKEN: ID                   LEXEME: 'sum'
+[006] TOKEN: ASSIGN               LEXEME: '='
+[006] TOKEN: ID                   LEXEME: 'x'
+[006] TOKEN: PLUS                 LEXEME: '+'
+[006] TOKEN: ID                   LEXEME: 'y'
+[006] TOKEN: SEMICOLON            LEXEME: ';'
+[007] TOKEN: BOOL                 LEXEME: 'bool'
+[007] TOKEN: ID                   LEXEME: 'ready'
+[007] TOKEN: ASSIGN               LEXEME: '='
+[007] TOKEN: ID                   LEXEME: 'sum'
+[007] TOKEN: GT                   LEXEME: '>'
+[007] TOKEN: INT_CONST            LEXEME: '10'
+[007] TOKEN: SEMICOLON            LEXEME: ';'
+[009] TOKEN: IF                   LEXEME: 'if'
+[009] TOKEN: LPAREN               LEXEME: '('
+[009] TOKEN: ID                   LEXEME: 'ready'
+[009] TOKEN: RPAREN               LEXEME: ')'
+[009] TOKEN: LBRACE               LEXEME: '{'
+[010] TOKEN: COUT                 LEXEME: 'cout'
+[010] TOKEN: LSHIFT               LEXEME: '<<'
+[010] TOKEN: ID                   LEXEME: 'sum'
+[010] TOKEN: SEMICOLON            LEXEME: ';'
+[011] TOKEN: RBRACE               LEXEME: '}'
+[011] TOKEN: ELSE                 LEXEME: 'else'
+[011] TOKEN: LBRACE               LEXEME: '{'
+[012] TOKEN: COUT                 LEXEME: 'cout'
+[012] TOKEN: LSHIFT               LEXEME: '<<'
+[012] TOKEN: ID                   LEXEME: 'y'
+[012] TOKEN: SEMICOLON            LEXEME: ';'
+[013] TOKEN: RBRACE               LEXEME: '}'
+[015] TOKEN: RETURN               LEXEME: 'return'
+[015] TOKEN: INT_CONST            LEXEME: '0'
+[015] TOKEN: SEMICOLON            LEXEME: ';'
+------------------------------------------------------------
+Total parser tokens: 44
+Lexical Analysis: SUCCESS (no lexical errors)
+
+===== Parser (AST) =====
+Parsing successful.
+
+Abstract Syntax Tree:
+PROGRAM
+    DECLARATION (x : int)
+    ASSIGNMENT (x)
+        INT (10)
+    DECLARATION (y : int)
+    ASSIGNMENT (y)
+        INT (3)
+    DECLARATION (sum : int)
+    ASSIGNMENT (sum)
+        BINARY OP (+)
+            IDENTIFIER (x)
+            IDENTIFIER (y)
+    DECLARATION (ready : bool)
+    ASSIGNMENT (ready)
+        BINARY OP (>)
+            IDENTIFIER (sum)
+            INT (10)
+    IF
+        IDENTIFIER (ready)
+        BLOCK
+            PRINT
+                IDENTIFIER (sum)
+        BLOCK
+            PRINT
+                IDENTIFIER (y)
+    UNARY OP (return)
+        INT (0)
+
+===== Semantic Analysis =====
+Semantic analysis successful. No errors found.
+
+Symbol Table:
+Name            Type       Scope      Line      
+--------------------------------------------------
+x               int        0          4         
+y               int        0          5         
+sum             int        0          6         
+ready           bool       0          7         
+
+===== Intermediate Code (TAC) =====
+    // declare x : int
+    x = 10
+    // declare y : int
+    y = 3
+    // declare sum : int
+    t0 = x + y
+    sum = t0
+    // declare ready : bool
+    t1 = sum > 10
+    ready = t1
+    ifFalse ready goto L0
+    print sum
+    goto L1
+L0:
+    print y
+L1:
+
+===== Code Optimization =====
+Constant folding + constant propagation applied (16 -> 16 TAC lines):
+
+    // declare x : int
+    x = 10
+    // declare y : int
+    y = 3
+    // declare sum : int
+    t0 = x + y
+    sum = t0
+    // declare ready : bool
+    t1 = sum > 10
+    ready = t1
+    ifFalse ready goto L0
+    print sum
+    goto L1
+L0:
+    print y
+L1:
+
+===== Target Code Generation (Assembly) =====
+SECTION .text
+GLOBAL _main
+
+_main:
+    PUSH EBP
+    MOV EBP, ESP
+
+    ; declare x : int
+    MOV EAX, 10
+    MOV [x], EAX
+    ; declare y : int
+    MOV EAX, 3
+    MOV [y], EAX
+    ; declare sum : int
+    MOV EAX, x
+    ADD EAX, y
+    MOV [t0], EAX
+    MOV EAX, t0
+    MOV [sum], EAX
+    ; declare ready : bool
+    MOV EAX, sum
+    CMP EAX, 10
+    SETG AL
+    MOV [t1], AL
+    MOV EAX, t1
+    MOV [ready], EAX
+    CMP ready, 0
+    JE L0
+    MOV EAX, sum
+    CALL PRINT_VALUE
+    JMP L1
+L0:
+    MOV EAX, y
+    CALL PRINT_VALUE
+L1:
+
+    MOV ESP, EBP
+    POP EBP
+    RET
+exit code: 0

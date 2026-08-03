@@ -1,23 +1,29 @@
 
 =========================================
-Syntax Error at line 5: syntax error, unexpected PRINT
+Syntax Error at line 4: syntax error, unexpected end of file
 =========================================
 
 ===== Lexical Analysis =====
 Language: Mini/C
 Line  Token                 Lexeme
 ------------------------------------------------------------
-[003] TOKEN: INT                  LEXEME: 'int'
-[003] TOKEN: ID                   LEXEME: 'x'
-[003] TOKEN: SEMICOLON            LEXEME: ';'
-[004] TOKEN: ID                   LEXEME: 'x'
-[004] TOKEN: ASSIGN               LEXEME: '='
-[004] TOKEN: INT_CONST            LEXEME: '5'
-[005] TOKEN: PRINT                LEXEME: 'print'
-[005] TOKEN: ID                   LEXEME: 'x'
-[005] TOKEN: SEMICOLON            LEXEME: ';'
+[001] TOKEN: INT                  LEXEME: 'int'
+[001] TOKEN: ID                   LEXEME: 'value'
+[001] TOKEN: ASSIGN               LEXEME: '='
+[001] TOKEN: INT_CONST            LEXEME: '10'
+[001] TOKEN: SEMICOLON            LEXEME: ';'
+[003] TOKEN: IF                   LEXEME: 'if'
+[003] TOKEN: LPAREN               LEXEME: '('
+[003] TOKEN: ID                   LEXEME: 'value'
+[003] TOKEN: GT                   LEXEME: '>'
+[003] TOKEN: INT_CONST            LEXEME: '5'
+[003] TOKEN: RPAREN               LEXEME: ')'
+[003] TOKEN: LBRACE               LEXEME: '{'
+[004] TOKEN: PRINT                LEXEME: 'print'
+[004] TOKEN: ID                   LEXEME: 'value'
+[004] TOKEN: SEMICOLON            LEXEME: ';'
 ------------------------------------------------------------
-Total parser tokens: 9
+Total parser tokens: 15
 Lexical Analysis: SUCCESS (no lexical errors)
 
 ===== Parser (AST) =====

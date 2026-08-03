@@ -1,0 +1,42 @@
+Lexical Error at line 2: Invalid character '@'
+
+===== Lexical Analysis =====
+Language: Mini/C
+Line  Token                 Lexeme
+------------------------------------------------------------
+[001] TOKEN: INT                  LEXEME: 'int'
+[001] TOKEN: ID                   LEXEME: 'value'
+[001] TOKEN: ASSIGN               LEXEME: '='
+[001] TOKEN: INT_CONST            LEXEME: '10'
+[001] TOKEN: SEMICOLON            LEXEME: ';'
+[002] TOKEN: ID                   LEXEME: 'value'
+[002] TOKEN: ASSIGN               LEXEME: '='
+[002] TOKEN: ID                   LEXEME: 'value'
+[002] TOKEN: INT_CONST            LEXEME: '2'
+[002] TOKEN: SEMICOLON            LEXEME: ';'
+------------------------------------------------------------
+Total parser tokens: 10
+Lexical Analysis: FAILED (1 error(s))
+
+===== Parser (AST) =====
+Status: NOT EXECUTED
+Reason: Lexical analysis failed.
+
+===== Semantic Analysis =====
+Status: NOT EXECUTED
+Reason: No valid AST was produced.
+
+===== Intermediate Code (TAC) =====
+Status: NOT GENERATED
+Reason: Compilation stopped after lexical analysis.
+
+===== Code Optimization =====
+Status: NOT EXECUTED
+Reason: No TAC was generated.
+
+===== Target Code Generation (Assembly) =====
+Status: NOT GENERATED
+Reason: No optimized TAC was available.
+
+Compilation halted after Phase 1 because 1 lexical error(s) were found.
+exit code: 1

@@ -92,10 +92,10 @@ Line  Token                 Lexeme
 Total parser tokens: 85
 Lexical Analysis: SUCCESS (no lexical errors)
 
-===== Parsing =====
+===== Parser (AST) =====
 Parsing successful.
 
-===== Abstract Syntax Tree =====
+Abstract Syntax Tree:
 PROGRAM
     DECLARATION (x : int)
     DECLARATION (y : int)
@@ -150,7 +150,7 @@ PROGRAM
 ===== Semantic Analysis =====
 Semantic analysis successful. No errors found.
 
-===== Symbol Table =====
+Symbol Table:
 Name            Type       Scope      Line      
 --------------------------------------------------
 x               int        0          5         
@@ -158,7 +158,7 @@ y               int        0          6
 avg             float      0          7         
 done            bool       0          8         
 
-===== Three Address Code (TAC) =====
+===== Intermediate Code (TAC) =====
     // declare x : int
     // declare y : int
     // declare avg : float
@@ -191,4 +191,118 @@ L1:
     avg = t7
     print y
     print avg
+
+===== Code Optimization =====
+Constant folding + constant propagation applied (32 -> 32 TAC lines):
+
+    // declare x : int
+    // declare y : int
+    // declare avg : float
+    // declare done : bool
+    x = 10
+    y = 0
+    done = false
+L0:
+    t0 = x > 0
+    t1 = !done
+    t2 = t0 && t1
+    ifFalse t2 goto L1
+    t3 = y + x
+    y = t3
+    t4 = x - 1
+    x = t4
+    t5 = x == 5
+    ifFalse t5 goto L2
+    print x
+    goto L3
+L2:
+    t6 = x < 2
+    ifFalse t6 goto L4
+    done = true
+L4:
+L3:
+    goto L0
+L1:
+    t7 = y / 2
+    avg = t7
+    print y
+    print avg
+
+===== Target Code Generation (Assembly) =====
+SECTION .text
+GLOBAL _main
+
+_main:
+    PUSH EBP
+    MOV EBP, ESP
+
+    ; declare x : int
+    ; declare y : int
+    ; declare avg : float
+    ; declare done : bool
+    MOV EAX, 10
+    MOV [x], EAX
+    MOV EAX, 0
+    MOV [y], EAX
+    MOV EAX, 0
+    MOV [done], EAX
+L0:
+    MOV EAX, x
+    CMP EAX, 0
+    SETG AL
+    MOV [t0], AL
+    MOV EAX, done
+    XOR EAX, 1
+    MOV [t1], EAX
+    MOV EAX, t0
+    AND EAX, t1
+    MOV [t2], EAX
+    CMP t2, 0
+    JE L1
+    MOV EAX, y
+    ADD EAX, x
+    MOV [t3], EAX
+    MOV EAX, t3
+    MOV [y], EAX
+    MOV EAX, x
+    SUB EAX, 1
+    MOV [t4], EAX
+    MOV EAX, t4
+    MOV [x], EAX
+    MOV EAX, x
+    CMP EAX, 5
+    SETE AL
+    MOV [t5], AL
+    CMP t5, 0
+    JE L2
+    MOV EAX, x
+    CALL PRINT_VALUE
+    JMP L3
+L2:
+    MOV EAX, x
+    CMP EAX, 2
+    SETL AL
+    MOV [t6], AL
+    CMP t6, 0
+    JE L4
+    MOV EAX, 1
+    MOV [done], EAX
+L4:
+L3:
+    JMP L0
+L1:
+    MOV EAX, y
+    CDQ
+    IDIV 2
+    MOV [t7], EAX
+    MOV EAX, t7
+    MOV [avg], EAX
+    MOV EAX, y
+    CALL PRINT_VALUE
+    MOV EAX, avg
+    CALL PRINT_VALUE
+
+    MOV ESP, EBP
+    POP EBP
+    RET
 exit code: 0

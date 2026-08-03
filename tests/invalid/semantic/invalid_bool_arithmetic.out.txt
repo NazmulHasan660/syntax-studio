@@ -1,0 +1,57 @@
+Semantic Error at line 2: Operator '+' cannot be applied to bool operands
+
+===== Lexical Analysis =====
+Language: Mini/C
+Line  Token                 Lexeme
+------------------------------------------------------------
+[001] TOKEN: BOOL                 LEXEME: 'bool'
+[001] TOKEN: ID                   LEXEME: 'enabled'
+[001] TOKEN: ASSIGN               LEXEME: '='
+[001] TOKEN: TRUE                 LEXEME: 'true'
+[001] TOKEN: SEMICOLON            LEXEME: ';'
+[002] TOKEN: INT                  LEXEME: 'int'
+[002] TOKEN: ID                   LEXEME: 'total'
+[002] TOKEN: ASSIGN               LEXEME: '='
+[002] TOKEN: ID                   LEXEME: 'enabled'
+[002] TOKEN: PLUS                 LEXEME: '+'
+[002] TOKEN: INT_CONST            LEXEME: '1'
+[002] TOKEN: SEMICOLON            LEXEME: ';'
+------------------------------------------------------------
+Total parser tokens: 12
+Lexical Analysis: SUCCESS (no lexical errors)
+
+===== Parser (AST) =====
+Parsing successful.
+
+Abstract Syntax Tree:
+PROGRAM
+    DECLARATION (enabled : bool)
+    ASSIGNMENT (enabled)
+        BOOL (true)
+    DECLARATION (total : int)
+    ASSIGNMENT (total)
+        BINARY OP (+)
+            IDENTIFIER (enabled)
+            INT (1)
+
+===== Semantic Analysis =====
+Semantic Analysis: FAILED (1 error(s))
+
+Symbol Table:
+Name            Type       Scope      Line      
+--------------------------------------------------
+enabled         bool       0          1         
+total           int        0          2         
+
+===== Intermediate Code (TAC) =====
+Status: NOT GENERATED
+Reason: Semantic analysis failed with 1 error(s).
+
+===== Code Optimization =====
+Status: NOT EXECUTED
+Reason: No TAC was generated.
+
+===== Target Code Generation (Assembly) =====
+Status: NOT GENERATED
+Reason: No optimized TAC was available.
+exit code: 1

@@ -74,10 +74,10 @@ Line  Token                 Lexeme
 Total parser tokens: 65
 Lexical Analysis: SUCCESS (no lexical errors)
 
-===== Parsing =====
+===== Parser (AST) =====
 Parsing successful.
 
-===== Abstract Syntax Tree =====
+Abstract Syntax Tree:
 PROGRAM
     DECLARATION (i : int)
     ASSIGNMENT (i)
@@ -128,14 +128,14 @@ PROGRAM
 ===== Semantic Analysis =====
 Semantic analysis successful. No errors found.
 
-===== Symbol Table =====
+Symbol Table:
 Name            Type       Scope      Line      
 --------------------------------------------------
 i               int        0          4         
 j               int        1          11        
 k               int        0          15        
 
-===== Three Address Code (TAC) =====
+===== Intermediate Code (TAC) =====
     // declare i : int
     i = 0
 L0:
@@ -166,4 +166,108 @@ L4:
     ifFalse t5 goto L5
     goto L4
 L5:
+
+===== Code Optimization =====
+Constant folding + constant propagation applied (30 -> 30 TAC lines):
+
+    // declare i : int
+    i = 0
+L0:
+    t0 = i < 2
+    ifFalse t0 goto L1
+    print i
+    t1 = i + 1
+    i = t1
+    goto L0
+L1:
+    // declare j : int
+    j = 0
+L2:
+    t2 = j < 2
+    ifFalse t2 goto L3
+    print j
+    t3 = j + 1
+    j = t3
+    goto L2
+L3:
+    // declare k : int
+    k = 0
+L4:
+    print k
+    t4 = k + 1
+    k = t4
+    t5 = k < 2
+    ifFalse t5 goto L5
+    goto L4
+L5:
+
+===== Target Code Generation (Assembly) =====
+SECTION .text
+GLOBAL _main
+
+_main:
+    PUSH EBP
+    MOV EBP, ESP
+
+    ; declare i : int
+    MOV EAX, 0
+    MOV [i], EAX
+L0:
+    MOV EAX, i
+    CMP EAX, 2
+    SETL AL
+    MOV [t0], AL
+    CMP t0, 0
+    JE L1
+    MOV EAX, i
+    CALL PRINT_VALUE
+    MOV EAX, i
+    ADD EAX, 1
+    MOV [t1], EAX
+    MOV EAX, t1
+    MOV [i], EAX
+    JMP L0
+L1:
+    ; declare j : int
+    MOV EAX, 0
+    MOV [j], EAX
+L2:
+    MOV EAX, j
+    CMP EAX, 2
+    SETL AL
+    MOV [t2], AL
+    CMP t2, 0
+    JE L3
+    MOV EAX, j
+    CALL PRINT_VALUE
+    MOV EAX, j
+    ADD EAX, 1
+    MOV [t3], EAX
+    MOV EAX, t3
+    MOV [j], EAX
+    JMP L2
+L3:
+    ; declare k : int
+    MOV EAX, 0
+    MOV [k], EAX
+L4:
+    MOV EAX, k
+    CALL PRINT_VALUE
+    MOV EAX, k
+    ADD EAX, 1
+    MOV [t4], EAX
+    MOV EAX, t4
+    MOV [k], EAX
+    MOV EAX, k
+    CMP EAX, 2
+    SETL AL
+    MOV [t5], AL
+    CMP t5, 0
+    JE L5
+    JMP L4
+L5:
+
+    MOV ESP, EBP
+    POP EBP
+    RET
 exit code: 0

@@ -1,0 +1,4 @@
+int value = 10;
+
+if (value > 5) {
+    print value;

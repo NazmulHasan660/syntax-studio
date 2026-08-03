@@ -1,0 +1,147 @@
+
+===== Lexical Analysis =====
+Language: Java
+Line  Token                 Lexeme
+------------------------------------------------------------
+[001] TOKEN: INT                  LEXEME: 'int'
+[001] TOKEN: ID                   LEXEME: 'a'
+[001] TOKEN: ASSIGN               LEXEME: '='
+[001] TOKEN: INT_CONST            LEXEME: '4'
+[001] TOKEN: SEMICOLON            LEXEME: ';'
+[002] TOKEN: INT                  LEXEME: 'int'
+[002] TOKEN: ID                   LEXEME: 'b'
+[002] TOKEN: ASSIGN               LEXEME: '='
+[002] TOKEN: INT_CONST            LEXEME: '2'
+[002] TOKEN: SEMICOLON            LEXEME: ';'
+[003] TOKEN: BOOL                 LEXEME: 'boolean'
+[003] TOKEN: ID                   LEXEME: 'valid'
+[003] TOKEN: ASSIGN               LEXEME: '='
+[003] TOKEN: ID                   LEXEME: 'a'
+[003] TOKEN: GE                   LEXEME: '>='
+[003] TOKEN: ID                   LEXEME: 'b'
+[003] TOKEN: SEMICOLON            LEXEME: ';'
+[005] TOKEN: IF                   LEXEME: 'if'
+[005] TOKEN: LPAREN               LEXEME: '('
+[005] TOKEN: ID                   LEXEME: 'valid'
+[005] TOKEN: RPAREN               LEXEME: ')'
+[005] TOKEN: LBRACE               LEXEME: '{'
+[006] TOKEN: PRINT_CALL           LEXEME: 'System.out.println'
+[006] TOKEN: LPAREN               LEXEME: '('
+[006] TOKEN: ID                   LEXEME: 'a'
+[006] TOKEN: RPAREN               LEXEME: ')'
+[006] TOKEN: SEMICOLON            LEXEME: ';'
+[007] TOKEN: RBRACE               LEXEME: '}'
+[007] TOKEN: ELSE                 LEXEME: 'else'
+[007] TOKEN: LBRACE               LEXEME: '{'
+[008] TOKEN: PRINT_CALL           LEXEME: 'System.out.println'
+[008] TOKEN: LPAREN               LEXEME: '('
+[008] TOKEN: ID                   LEXEME: 'b'
+[008] TOKEN: RPAREN               LEXEME: ')'
+[008] TOKEN: SEMICOLON            LEXEME: ';'
+[009] TOKEN: RBRACE               LEXEME: '}'
+------------------------------------------------------------
+Total parser tokens: 36
+Lexical Analysis: SUCCESS (no lexical errors)
+
+===== Parser (AST) =====
+Parsing successful.
+
+Abstract Syntax Tree:
+PROGRAM
+    DECLARATION (a : int)
+    ASSIGNMENT (a)
+        INT (4)
+    DECLARATION (b : int)
+    ASSIGNMENT (b)
+        INT (2)
+    DECLARATION (valid : bool)
+    ASSIGNMENT (valid)
+        BINARY OP (>=)
+            IDENTIFIER (a)
+            IDENTIFIER (b)
+    IF
+        IDENTIFIER (valid)
+        BLOCK
+            PRINT
+                IDENTIFIER (a)
+        BLOCK
+            PRINT
+                IDENTIFIER (b)
+
+===== Semantic Analysis =====
+Semantic analysis successful. No errors found.
+
+Symbol Table:
+Name            Type       Scope      Line      
+--------------------------------------------------
+a               int        0          1         
+b               int        0          2         
+valid           bool       0          3         
+
+===== Intermediate Code (TAC) =====
+    // declare a : int
+    a = 4
+    // declare b : int
+    b = 2
+    // declare valid : bool
+    t0 = a >= b
+    valid = t0
+    ifFalse valid goto L0
+    print a
+    goto L1
+L0:
+    print b
+L1:
+
+===== Code Optimization =====
+Constant folding + constant propagation applied (13 -> 13 TAC lines):
+
+    // declare a : int
+    a = 4
+    // declare b : int
+    b = 2
+    // declare valid : bool
+    t0 = a >= b
+    valid = t0
+    ifFalse valid goto L0
+    print a
+    goto L1
+L0:
+    print b
+L1:
+
+===== Target Code Generation (Assembly) =====
+SECTION .text
+GLOBAL _main
+
+_main:
+    PUSH EBP
+    MOV EBP, ESP
+
+    ; declare a : int
+    MOV EAX, 4
+    MOV [a], EAX
+    ; declare b : int
+    MOV EAX, 2
+    MOV [b], EAX
+    ; declare valid : bool
+    MOV EAX, a
+    CMP EAX, b
+    SETGE AL
+    MOV [t0], AL
+    MOV EAX, t0
+    MOV [valid], EAX
+    CMP valid, 0
+    JE L0
+    MOV EAX, a
+    CALL PRINT_VALUE
+    JMP L1
+L0:
+    MOV EAX, b
+    CALL PRINT_VALUE
+L1:
+
+    MOV ESP, EBP
+    POP EBP
+    RET
+exit code: 0

@@ -25,25 +25,25 @@ Line  Token                 Lexeme
 Total parser tokens: 16
 Lexical Analysis: FAILED (2 error(s))
 
-===== Parsing =====
+===== Parser (AST) =====
 Status: NOT EXECUTED
 Reason: Lexical analysis failed.
-
-===== Abstract Syntax Tree =====
-Status: NOT GENERATED
-Reason: Parsing was not completed.
 
 ===== Semantic Analysis =====
 Status: NOT EXECUTED
 Reason: No valid AST was produced.
 
-===== Symbol Table =====
-Status: NOT GENERATED
-Reason: Semantic analysis was not executed.
-
-===== Three Address Code (TAC) =====
+===== Intermediate Code (TAC) =====
 Status: NOT GENERATED
 Reason: Compilation stopped after lexical analysis.
+
+===== Code Optimization =====
+Status: NOT EXECUTED
+Reason: No TAC was generated.
+
+===== Target Code Generation (Assembly) =====
+Status: NOT GENERATED
+Reason: No optimized TAC was available.
 
 Compilation halted after Phase 1 because 2 lexical error(s) were found.
 exit code: 1
