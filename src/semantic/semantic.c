@@ -87,6 +87,10 @@ static const char *analyze_expression(ASTNode *expression)
             result_type = "float";
             break;
 
+        case NODE_STRING_LITERAL:
+            result_type = "string";
+            break;
+
         case NODE_BOOL_LITERAL:
             result_type = "bool";
             break;
@@ -459,7 +463,14 @@ static void analyze_statement(ASTNode *statement)
 
         case NODE_PRINT:
         {
-            analyze_expression(statement->left);
+            ASTNode *argument = statement->left;
+
+            while (argument != NULL)
+            {
+                analyze_expression(argument);
+                argument = argument->next;
+            }
+
             break;
         }
 

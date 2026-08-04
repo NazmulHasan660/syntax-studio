@@ -1,4 +1,3 @@
-
 ### A Mini Compiler for a Simplified Statically-Typed Language using Flex & Bison
 
 **Course:** Compiler Construction Lab  
@@ -9,7 +8,9 @@
 
 # Project Goal
 
-Syntax Studio is a mini compiler developed using Flex and Bison. It implements lexical analysis, syntax analysis, abstract syntax tree (AST) construction, symbol table management, semantic analysis, and intermediate code generation using Three Address Code (TAC).
+Syntax Studio is a mini compiler developed using Flex and Bison. It implements all six required compiler phases end to end: lexical analysis, syntax analysis, semantic analysis, intermediate code generation (Three Address Code), code optimization (constant folding and constant propagation), and target code generation (simplified x86-style assembly). Abstract syntax tree (AST) construction and symbol table management happen inside the parser and semantic-analysis phases respectively.
+
+Per the instructor's clarified project scope, the compiler also accepts common C/C++/Java surface syntax (`#include`/`using namespace`/`import`/`package`, access modifiers, `cout <<`, `printf(...)`, `System.out.println(...)`, `boolean`/`double` aliases) in addition to the core fixed language, and supports `for`, `do-while`, `while`, `++`/`--`, and unary minus alongside the base statement/operator set.
 
 The project follows the compiler design principles taught in the Compiler Construction Lab course.
 
@@ -38,32 +39,47 @@ Primary Responsibilities
 - Semantic Analysis
 - Type Checking
 - Three Address Code (TAC) Generation
+- Code Optimization (constant folding / propagation)
+- Target Code Generation (assembly)
 
 ---
 
 # Compiler Pipeline
 
+Six required phases, per the course specification:
+
 ```
 Source Program
       │
       ▼
-Lexical Analyzer (Flex)
+1. Lexical Analyzer (Flex)
       │
       ▼
-Syntax Analyzer (Bison)
+2. Syntax Analyzer (Bison)
+      │   (builds the AST as it parses)
+      ▼
+3. Semantic Analysis
+      │   (builds/queries the symbol table as it walks the AST)
+      ▼
+4. Intermediate Code (Three Address Code)
       │
       ▼
-Abstract Syntax Tree (AST)
+5. Code Optimization (constant folding + constant propagation)
       │
       ▼
-Symbol Table Construction
-      │
-      ▼
-Semantic Analysis
-      │
-      ▼
-Three Address Code (TAC)
+6. Target Code Generation (simplified x86-style assembly)
 ```
+
+AST construction and symbol table management are not separate
+pipeline phases -- the AST is built as a side effect of phase 2
+(Parser), and the symbol table is built/queried as a side effect of
+phase 3 (Semantic Analysis). They get their own chapters in the
+project report for depth, but the phase count stays at six.
+
+Each later phase only runs if the one before it succeeded: a
+lexical error stops the pipeline before parsing, a syntax error
+stops it before semantic analysis, and a semantic error stops it
+before TAC/optimization/target code generation.
 
 ---
 
@@ -73,11 +89,11 @@ Three Address Code (TAC)
 
 - int
 - float
-- bool
+- bool (`boolean` is accepted as a Java-style alias, `double` as a C/C++-style alias for float)
 
 ## Statements
 
-- Variable Declaration
+- Variable Declaration (including `int x = 5;` initialized form)
 - Assignment
 - Arithmetic Expressions
 - Relational Expressions
@@ -85,7 +101,9 @@ Three Address Code (TAC)
 - if
 - if-else
 - while
-- print
+- for
+- do-while
+- print (three forms: `print expr;`, `cout << expr;`, `printf(expr, expr, ...);`)
 
 ## Operators
 
@@ -106,6 +124,42 @@ Three Address Code (TAC)
 ```
 &&  ||  !
 ```
+
+### Unary / Increment
+
+```
+-x   (unary minus)
+x++  x--
+```
+
+## Multi-Language Surface Syntax
+
+The lexer recognizes and accepts common C/C++/Java surface syntax on
+top of the core fixed language, per the instructor's confirmed
+project scope:
+
+- Directives/imports, silently ignored: `#include ...`, `using namespace ...`, `import ...`, `package ...`
+- Access/storage modifiers, silently ignored: `public`, `private`, `protected`, `static`, `final`, `const`
+- Print forms: `printf(...)` (C), `cout << ...` / `std::cout << ...` (C++), `System.out.println(...)` / `System.out.print(...)` (Java)
+- Type aliases: `double` for `float`, `boolean` for `bool`
+
+This lets a pasted-in C/C++/Java-flavored statement body lex and
+parse successfully (see `tests/valid/valid_c_style.c`, `loops.cpp`,
+`loops.java`). It is not a real C/C++/Java compiler: a full source
+file with `class`/`void`/function declarations and a `main` wrapper
+is not supported, only statement bodies are.
+
+## Code Optimization
+
+- Constant folding (e.g. `2 + 3 * 4` folds to `14` at compile time)
+- Constant propagation on the generated TAC
+
+See `tests/valid/valid_constant_folding.src` for a before/after example.
+
+## Target Code Generation
+
+- Simplified x86-style pseudo-assembly emitted from the optimized TAC
+- Illustrative/educational only: no register allocation, linking, or a real assemblable backend
 
 ## Other Features
 
@@ -185,17 +239,25 @@ make
 Run the compiler with a source program:
 
 ```bash
-./compiler examples/test1.src
+./compiler tests/valid/valid_arithmetic_and_control_flow.src
 ```
 
-You can also test other example programs:
+A few more programs worth trying, each exercising a different part
+of the pipeline:
 
 ```bash
-./compiler examples/test2.src
-./compiler examples/test3.src
+./compiler tests/valid/valid_c_style.c              # C-flavored: #include, printf, for
+./compiler tests/valid/loops.cpp                    # C++-flavored: cout, for, do-while
+./compiler tests/valid/loops.java                   # Java-flavored: System.out.println
+./compiler tests/valid/valid_constant_folding.src   # shows constant folding in the Optimization phase
+./compiler tests/valid/valid_printf_multi_arg.src   # printf(...) with several arguments
 ```
 
-When the input is valid, the compiler prints the parsed AST, runs semantic analysis, and then emits TAC.
+`examples/` is reserved for a small curated set of demo programs
+(work in progress); until it's populated, the commands above under
+`tests/valid/` are the copy-pasteable working examples.
+
+When the input is valid, the compiler prints the token stream, the parsed AST, the semantic analysis result, the TAC, the optimized TAC, and the generated assembly, in that order. When it's invalid, the pipeline stops at whichever phase failed and reports why the later phases didn't run.
 
 ## GUI
 
@@ -221,12 +283,14 @@ If the compiler binary is missing, the GUI will warn you and ask you to run `mak
 |---------|--------|
 | Project Structure | ✅ Completed |
 | Build System | ✅ Completed |
-| Lexer | ✅ Completed |
+| Lexer (incl. multi-language tokens) | ✅ Completed |
 | Parser | ✅ Completed |
 | AST | ✅ Completed |
 | Symbol Table | ✅ Completed |
 | Semantic Analysis | ✅ Completed |
 | TAC Generation | ✅ Completed |
+| Code Optimization | ✅ Completed |
+| Target Code Generation | ✅ Completed |
 | Example Tests | 🔄 In Progress |
 | Documentation | 🔄 In Progress |
 
@@ -246,20 +310,19 @@ If the compiler binary is missing, the GUI will warn you and ask you to run `mak
 
 # Learning Objectives
 
-This project demonstrates the implementation of the major phases of a compiler:
+This project demonstrates the implementation of all six required phases of a compiler:
 
-- Lexical Analysis
-- Syntax Analysis
-- Abstract Syntax Tree Construction
-- Symbol Table Management
-- Semantic Analysis
-- Intermediate Code Generation (Three Address Code)
+1. Lexical Analysis
+2. Syntax Analysis (building the AST)
+3. Semantic Analysis (building/querying the symbol table)
+4. Intermediate Code Generation (Three Address Code)
+5. Code Optimization (constant folding + constant propagation)
+6. Target Code Generation (assembly)
 
-The current implementation covers all of these stages for the supported language subset.
+The current implementation covers all six phases, plus a multi-language (C/C++/Java) front-end, for the supported language subset.
 
 ---
 
 # License
 
 This project was developed as part of the **Compiler Construction Lab** course at **Metropolitan University, Sylhet**.
-

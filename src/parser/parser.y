@@ -620,7 +620,7 @@ Expression
     }
     | STRING_LITERAL
     {
-        $$ = create_node(NODE_INT_LITERAL, $1);
+        $$ = create_node(NODE_STRING_LITERAL, $1);
         free($1);
     }
     | TRUE

@@ -121,6 +121,13 @@ void print_ast(ASTNode *node, int level)
                 );
                 break;
 
+            case NODE_STRING_LITERAL:
+                printf(
+                    "STRING (%s)\n",
+                    node->text ? node->text : ""
+                );
+                break;
+
             case NODE_BOOL_LITERAL:
                 printf(
                     "BOOL (%s)\n",

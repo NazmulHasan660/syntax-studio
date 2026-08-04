@@ -94,6 +94,7 @@ static char *generate_expression(
         case NODE_INT_LITERAL:
         case NODE_FLOAT_LITERAL:
         case NODE_BOOL_LITERAL:
+        case NODE_STRING_LITERAL:
             return strdup(expression->text);
 
         case NODE_UNARY_OP:
@@ -225,19 +226,27 @@ static void generate_statement(
 
         case NODE_PRINT:
         {
-            char *value =
-                generate_expression(
-                    statement->left,
-                    list
+            ASTNode *argument = statement->left;
+
+            while (argument != NULL)
+            {
+                char *value =
+                    generate_expression(
+                        argument,
+                        list
+                    );
+
+                emit_tac(
+                    list,
+                    "print %s",
+                    value
                 );
 
-            emit_tac(
-                list,
-                "print %s",
-                value
-            );
+                free(value);
 
-            free(value);
+                argument = argument->next;
+            }
+
             break;
         }
 
@@ -543,12 +552,20 @@ void print_tac(const TACList *list)
     for (int i = 0; i < list->count; i++)
     {
         /*
-         * Labels are printed without indentation.
+         * Labels are printed without indentation. A label line is
+         * a single token ending in ':' (e.g. "L0:"). Checking for
+         * ':' anywhere in the line is not enough -- a print
+         * statement whose string literal contains a colon (e.g.
+         * print "Score:") would be misdetected as a label.
          */
-        if (
-            strchr(list->lines[i], ':') != NULL &&
-            strncmp(list->lines[i], "//", 2) != 0
-        )
+        size_t length = strlen(list->lines[i]);
+
+        int is_label =
+            length > 0 &&
+            list->lines[i][length - 1] == ':' &&
+            strncmp(list->lines[i], "//", 2) != 0;
+
+        if (is_label)
         {
             printf(
                 "%s\n",

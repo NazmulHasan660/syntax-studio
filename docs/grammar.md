@@ -92,8 +92,11 @@ parser.y):
                           attaches the 'else' to the nearest 'if',
                           matching every mainstream language.
 
-Unary minus (`-x`) is a bonus feature (Section 14 lists "unary
-operators, increment/decrement" as a language-extension bonus). It is
+Unary minus (`-x`) is required per the instructor's confirmed
+six-phase + multi-language specification (previously treated as an
+optional Section 14 bonus in an earlier draft of this document; the
+instructor has since clarified it is part of the required language).
+It is
 implemented with a dedicated `%prec UMINUS` rule so that `a - -b`
 parses unambiguously as `a - (-b)` and `-a * b` parses as `(-a) * b`,
 matching standard C-family precedence. Semantically it requires a
@@ -119,8 +122,12 @@ requires a `bool` operand.
   intentionally contains two separate syntax errors and gets both
   reported in a single run.
 - `for`, `do-while`, `++`/`--`, and the `cout <<` / `printf(...)`
-  print forms are bonus features (Section 14 of the manual lists
-  `for`, `do-while`, and increment/decrement as optional extras).
+  print forms are required per the instructor's confirmed six-phase
+  + multi-language specification (an earlier draft of this document
+  called them optional Section 14 extras; that framing is outdated
+  now that the instructor has confirmed multi-language C/C++/Java
+  surface support, loops, and unary/increment operators are part of
+  the required scope, not bonus work).
   `return` is accepted syntactically but is a documented no-op in
   semantic analysis and TAC generation (see the comments in
   `semantic.c` and `tac.c`) -- this project intentionally does not
@@ -140,3 +147,12 @@ requires a `bool` operand.
   `class Main { public static void main(...) {...} }`) will still be
   rejected -- only the statement bodies are supported, not function
   or class syntax.
+- `printf(ExpressionList)` accepts more than one comma-separated
+  expression (e.g. `printf("Result:", sum);`), matching the grammar
+  above. Each expression in the list becomes its own `print` line in
+  the generated TAC, in source order -- there is no printf-style
+  format-string substitution (`%d` etc. is not interpreted; a string
+  literal argument is just printed as a literal string). An earlier
+  build only evaluated the first expression in the list and silently
+  dropped the rest; this is fixed as of the current `semantic.c` /
+  `tac.c`.
