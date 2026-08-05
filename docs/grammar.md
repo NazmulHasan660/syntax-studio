@@ -1,158 +1,143 @@
-# Formal Grammar (CFG)
+# Formal Grammar (CFG) Specification
 
-This is the context-free grammar actually implemented in
-src/parser/parser.y, written out in BNF for the project report
-(Section 12 of the manual requires this).
+This document contains the formal Context-Free Grammar (CFG) implemented in `src/parser/parser.y` for **Syntax Studio** in Backus-Naur Form (BNF).
 
-    Program          -> OuterDeclarations
+---
 
-    OuterDeclarations -> OuterDeclarations Statement
-                      |  (empty)
+## Context-Free Grammar in BNF Notation
 
-    StatementList    -> StatementList Statement
-                      |  (empty)
+```bnf
+Program          ::= OuterDeclarations
 
-    Statement        -> Declaration
-                      |  Assignment
-                      |  IfStatement
-                      |  WhileStatement
-                      |  ForStatement
-                      |  DoWhileStatement
-                      |  ReturnStatement
-                      |  PrintStatement
-                      |  Block
-                      |  ';'
-                      |  error ';'          (error recovery)
+OuterDeclarations ::= OuterDeclarations TopLevelItem
+                  |  ε
 
-    Block            -> '{' StatementList '}'
+TopLevelItem     ::= ClassDeclaration
+                  |  FunctionDefinition
+                  |  Statement
 
-    Declaration      -> Type DeclList ';'
+ClassDeclaration ::= 'class' ID '{' OuterDeclarations '}'
 
-    Type             -> 'int' | 'float' | 'bool'
+FunctionDefinition ::= Type ID '(' ParamList ')' Block
 
-    Assignment       -> ID '=' Expression ';'
-                      |  ID '++' ';'
-                      |  ID '--' ';'
+ParamList        ::= ParamListItems
+                  |  ε
 
-    IfStatement      -> 'if' '(' Expression ')' Statement
-                      |  'if' '(' Expression ')' Statement 'else' Statement
+ParamListItems   ::= ParamItem
+                  |  ParamListItems ',' ParamItem
 
-    WhileStatement   -> 'while' '(' Expression ')' Statement
+ParamItem        ::= Type ID
+                  |  Type ID '[' ']'
+                  |  'String' '[' ']' ID
+                  |  'char' '*' ID
+                  |  'char' '*' '*' ID
+                  |  'void'
+                  |  ID ID
 
-    ForStatement     -> 'for' '(' ForInit ';' Expression ';' ForUpdate ')' Statement
+StatementList    ::= StatementList Statement
+                  |  ε
 
-    DoWhileStatement -> 'do' Statement 'while' '(' Expression ')' ';'
+Statement        ::= Declaration
+                  |  Assignment
+                  |  IfStatement
+                  |  WhileStatement
+                  |  ForStatement
+                  |  DoWhileStatement
+                  |  ReturnStatement
+                  |  PrintStatement
+                  |  Block
+                  |  ';'
+                  |  error ';'
 
-    ReturnStatement  -> 'return' Expression ';'
-                      |  'return' ';'
+Block            ::= '{' StatementList '}'
 
-    PrintStatement   -> 'print' Expression ';'
-                      |  'cout' '<<' Expression ';'
-                      |  'printf' '(' ExpressionList ')' ';'
+Declaration      ::= Type DeclList ';'
 
-    Expression       -> Expression '||' Expression
-                      |  Expression '&&' Expression
-                      |  Expression '==' Expression
-                      |  Expression '!=' Expression
-                      |  Expression '<'  Expression
-                      |  Expression '>'  Expression
-                      |  Expression '<=' Expression
-                      |  Expression '>=' Expression
-                      |  Expression '+'  Expression
-                      |  Expression '-'  Expression
-                      |  Expression '*'  Expression
-                      |  Expression '/'  Expression
-                      |  Expression '%'  Expression
-                      |  '!' Expression
-                      |  '-' Expression            (unary minus)
-                      |  '(' Expression ')'
-                      |  ID
-                      |  INT_CONST
-                      |  FLOAT_CONST
-                      |  STRING_LITERAL
-                      |  'true'
-                      |  'false'
+Type             ::= 'int' | 'float' | 'bool' | 'void'
 
-## Operator precedence & associativity
+Assignment       ::= ID '=' Expression ';'
+                  |  ID '++' ';'
+                  |  ID '--' ';'
 
-Lowest to highest (matches the %left / %precedence declarations in
-parser.y):
+IfStatement      ::= 'if' '(' Expression ')' Statement
+                  |  'if' '(' Expression ')' Statement 'else' Statement
 
-    Level 1 (lowest)   : OR   (||)              -- left
-    Level 2            : AND  (&&)               -- left
-    Level 3            : EQ NEQ (== !=)          -- left
-    Level 4            : LT GT LE GE (< > <= >=) -- left
-    Level 5            : PLUS MINUS (+ -, binary)-- left
-    Level 6            : MUL DIV MOD             -- left
-    Level 7            : NOT (!)                 -- right (%precedence)
-    Level 8 (highest)  : UMINUS (unary -)         -- right (%precedence)
+WhileStatement   ::= 'while' '(' Expression ')' Statement
 
-    dangling-else      : resolved by LOWER_THAN_ELSE / ELSE
-                          precedence, so 'if (a) if (b) s1; else s2;'
-                          attaches the 'else' to the nearest 'if',
-                          matching every mainstream language.
+ForStatement     ::= 'for' '(' ForInit ';' Expression ';' ForUpdate ')' Statement
 
-Unary minus (`-x`) is required per the instructor's confirmed
-six-phase + multi-language specification (previously treated as an
-optional Section 14 bonus in an earlier draft of this document; the
-instructor has since clarified it is part of the required language).
-It is
-implemented with a dedicated `%prec UMINUS` rule so that `a - -b`
-parses unambiguously as `a - (-b)` and `-a * b` parses as `(-a) * b`,
-matching standard C-family precedence. Semantically it requires a
-numeric (`int` or `float`) operand and preserves that operand's type;
-applying it to a `bool` is a semantic error, symmetric with how `!`
-requires a `bool` operand.
+DoWhileStatement ::= 'do' Statement 'while' '(' Expression ')' ';'
 
-## Notes for the report
+ReturnStatement  ::= 'return' Expression ';'
+                  |  'return' ';'
 
-- This grammar is unambiguous: `bison -d src/parser/parser.y`
-  produces zero shift/reduce and zero reduce/reduce conflicts as
-  currently written. Every binary operator has an explicit
-  precedence/associativity declaration, and the one classic ambiguity
-  in the language (dangling else) is resolved with the
-  LOWER_THAN_ELSE / ELSE precedence trick above instead of being left
-  as an unresolved conflict.
-- The error-recovery rule (`error ';'`) is Bison's built-in
-  error-recovery mechanism: on a malformed statement, the parser
-  discards tokens up to the next semicolon and resumes with
-  `yyerrok`, so later errors in the same file are still detected
-  instead of the compiler stopping at the first one. See
-  `tests/invalid/syntax/multiple_errors_recovery.src`, which
-  intentionally contains two separate syntax errors and gets both
-  reported in a single run.
-- `for`, `do-while`, `++`/`--`, and the `cout <<` / `printf(...)`
-  print forms are required per the instructor's confirmed six-phase
-  + multi-language specification (an earlier draft of this document
-  called them optional Section 14 extras; that framing is outdated
-  now that the instructor has confirmed multi-language C/C++/Java
-  surface support, loops, and unary/increment operators are part of
-  the required scope, not bonus work).
-  `return` is accepted syntactically but is a documented no-op in
-  semantic analysis and TAC generation (see the comments in
-  `semantic.c` and `tac.c`) -- this project intentionally does not
-  implement user-defined functions or function calls, so `return`
-  never appears inside a real call frame.
-- The lexer additionally tolerates (and silently ignores) a handful
-  of real C++/Java tokens that a pasted-in C++/Java snippet would
-  contain but that this language subset does not itself use:
-  `#include ...`, `using namespace ...`, `import ...`, `package ...`,
-  and access/storage modifiers (`public`, `private`, `protected`,
-  `static`, `final`, `const`). This is why
-  `tests/valid/loops.cpp` and `tests/valid/loops.java` -- real
-  C++-flavored and Java-flavored source -- lex and parse successfully
-  even though this is not a C++ or Java compiler. It does not,
-  however, understand `class`/`void`/function declarations, so a
-  full real C++/Java file with a `main` wrapper (`int main() {...}`,
-  `class Main { public static void main(...) {...} }`) will still be
-  rejected -- only the statement bodies are supported, not function
-  or class syntax.
-- `printf(ExpressionList)` accepts more than one comma-separated
-  expression (e.g. `printf("Result:", sum);`), matching the grammar
-  above. Each expression in the list becomes its own `print` line in
-  the generated TAC, in source order -- there is no printf-style
-  format-string substitution (`%d` etc. is not interpreted; a string
-  literal argument is just printed as a literal string). An earlier
-  build only evaluated the first expression in the list and silently
-  dropped the rest; this is fixed as of the current `semantic.c` /
-  `tac.c`.
+PrintStatement   ::= 'print' Expression ';'
+                  |  'cout' '<<' Expression ';'
+                  |  'printf' '(' ExpressionList ')' ';'
+
+ExpressionList   ::= ExpressionList ',' Expression
+                  |  Expression
+                  |  ε
+
+Expression       ::= Expression '||' Expression
+                  |  Expression '&&' Expression
+                  |  Expression '==' Expression | Expression '!=' Expression
+                  |  Expression '<' Expression  | Expression '>' Expression
+                  |  Expression '<=' Expression | Expression '>=' Expression
+                  |  Expression '+' Expression  | Expression '-' Expression
+                  |  Expression '*' Expression  | Expression '/' Expression | Expression '%' Expression
+                  |  '!' Expression
+                  |  '-' Expression
+                  |  '(' Expression ')'
+                  |  ID
+                  |  INT_CONST
+                  |  FLOAT_CONST
+                  |  STRING_LITERAL
+                  |  'true'
+                  |  'false'
+```
+
+---
+
+## Operator Precedence & Associativity Table
+
+Lowest to highest precedence (matching `%left` and `%precedence` declarations in `src/parser/parser.y`):
+
+| Precedence Level | Operators | Associativity | Description |
+|------------------|-----------|---------------|-------------|
+| Level 1 (Lowest) | `||` | Left | Logical OR |
+| Level 2 | `&&` | Left | Logical AND |
+| Level 3 | `==`, `!=` | Left | Equality & inequality comparison |
+| Level 4 | `<`, `>`, `<=`, `>=` | Left | Relational comparison |
+| Level 5 | `+`, `-` | Left | Binary addition and subtraction |
+| Level 6 | `*`, `/`, `%` | Left | Multiplication, division, modulo |
+| Level 7 | `!` | Right | Logical NOT |
+| Level 8 (Highest) | `-` (unary) | Right | Unary minus (`%prec UMINUS`) |
+
+---
+
+## Dangling-Else Resolution
+
+The classic "dangling-else" ambiguity (`if (a) if (b) s1; else s2;`) is resolved using Bison's `%precedence LOWER_THAN_ELSE` and `%precedence ELSE` declarations. This explicitly attaches the `else` clause to the nearest inner `if` statement, matching standard C, C++, and Java semantics.
+
+---
+
+## Design & Notes for Project Presentation
+
+### Zero Ambiguities
+
+Running `bison -d src/parser/parser.y` produces **0 shift/reduce** and **0 reduce/reduce** conflicts. Every operator has an explicit precedence and associativity declaration.
+
+### Error Recovery (`error ';'`)
+
+Uses Bison's built-in error recovery mechanism. On encountering a syntax error in a statement, the parser discards tokens up to the next semicolon (`;`), invokes `yyerrok`, and continues parsing subsequent statements rather than abruptly aborting compilation.
+
+### Multi-Language Surface Syntax & Full Main Support
+
+- Directives (`#include ...`, `using namespace ...`, `import ...`, `package ...`) and access modifiers (`public`, `private`, `protected`, `static`, `final`, `const`) are recognized and silently discarded by the lexer.
+- Top-level constructs support class declarations and `main()` function signatures with parameters (such as `int main()`, `int main(int argc, char** argv)`, and `public static void main(String[] args)`).
+- Multiple print forms are fully supported (`print expr;`, `cout << expr;`, `printf(expr1, expr2, ...);`, `System.out.println(expr);`).
+
+### Unary Minus (`-x`)
+
+Implemented with a dedicated `%prec UMINUS` rule so that `-a * b` parses unambiguously as `(-a) * b` and `a - -b` parses as `a - (-b)`.

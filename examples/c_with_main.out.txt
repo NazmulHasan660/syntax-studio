@@ -1,0 +1,181 @@
+
+===== Lexical Analysis =====
+Language: C
+Line  Token                 Lexeme
+------------------------------------------------------------
+[001] TOKEN: DIRECTIVE            LEXEME: '#include <stdio.h>' (ignored)
+[003] TOKEN: INT                  LEXEME: 'int'
+[003] TOKEN: ID                   LEXEME: 'main'
+[003] TOKEN: LPAREN               LEXEME: '('
+[003] TOKEN: INT                  LEXEME: 'int'
+[003] TOKEN: ID                   LEXEME: 'argc'
+[003] TOKEN: COMMA                LEXEME: ','
+[003] TOKEN: CHAR                 LEXEME: 'char'
+[003] TOKEN: MUL                  LEXEME: '*'
+[003] TOKEN: MUL                  LEXEME: '*'
+[003] TOKEN: ID                   LEXEME: 'argv'
+[003] TOKEN: RPAREN               LEXEME: ')'
+[003] TOKEN: LBRACE               LEXEME: '{'
+[004] TOKEN: INT                  LEXEME: 'int'
+[004] TOKEN: ID                   LEXEME: 'x'
+[004] TOKEN: ASSIGN               LEXEME: '='
+[004] TOKEN: INT_CONST            LEXEME: '10'
+[004] TOKEN: SEMICOLON            LEXEME: ';'
+[005] TOKEN: INT                  LEXEME: 'int'
+[005] TOKEN: ID                   LEXEME: 'y'
+[005] TOKEN: ASSIGN               LEXEME: '='
+[005] TOKEN: INT_CONST            LEXEME: '20'
+[005] TOKEN: SEMICOLON            LEXEME: ';'
+[006] TOKEN: INT                  LEXEME: 'int'
+[006] TOKEN: ID                   LEXEME: 'sum'
+[006] TOKEN: ASSIGN               LEXEME: '='
+[006] TOKEN: ID                   LEXEME: 'x'
+[006] TOKEN: PLUS                 LEXEME: '+'
+[006] TOKEN: ID                   LEXEME: 'y'
+[006] TOKEN: SEMICOLON            LEXEME: ';'
+[008] TOKEN: IF                   LEXEME: 'if'
+[008] TOKEN: LPAREN               LEXEME: '('
+[008] TOKEN: ID                   LEXEME: 'sum'
+[008] TOKEN: GT                   LEXEME: '>'
+[008] TOKEN: INT_CONST            LEXEME: '20'
+[008] TOKEN: RPAREN               LEXEME: ')'
+[008] TOKEN: LBRACE               LEXEME: '{'
+[009] TOKEN: PRINT_CALL           LEXEME: 'printf'
+[009] TOKEN: LPAREN               LEXEME: '('
+[009] TOKEN: ID                   LEXEME: 'sum'
+[009] TOKEN: RPAREN               LEXEME: ')'
+[009] TOKEN: SEMICOLON            LEXEME: ';'
+[010] TOKEN: RBRACE               LEXEME: '}'
+[010] TOKEN: ELSE                 LEXEME: 'else'
+[010] TOKEN: LBRACE               LEXEME: '{'
+[011] TOKEN: PRINT_CALL           LEXEME: 'printf'
+[011] TOKEN: LPAREN               LEXEME: '('
+[011] TOKEN: ID                   LEXEME: 'x'
+[011] TOKEN: RPAREN               LEXEME: ')'
+[011] TOKEN: SEMICOLON            LEXEME: ';'
+[012] TOKEN: RBRACE               LEXEME: '}'
+[014] TOKEN: RETURN               LEXEME: 'return'
+[014] TOKEN: INT_CONST            LEXEME: '0'
+[014] TOKEN: SEMICOLON            LEXEME: ';'
+[015] TOKEN: RBRACE               LEXEME: '}'
+------------------------------------------------------------
+Total parser tokens: 54
+Lexical Analysis: SUCCESS (no lexical errors)
+
+===== Parser (AST) =====
+Parsing successful.
+
+Abstract Syntax Tree:
+PROGRAM
+    FUNCTION (main : int)
+        BLOCK
+            DECLARATION (x : int)
+            ASSIGNMENT (x)
+                INT (10)
+            DECLARATION (y : int)
+            ASSIGNMENT (y)
+                INT (20)
+            DECLARATION (sum : int)
+            ASSIGNMENT (sum)
+                BINARY OP (+)
+                    IDENTIFIER (x)
+                    IDENTIFIER (y)
+            IF
+                BINARY OP (>)
+                    IDENTIFIER (sum)
+                    INT (20)
+                BLOCK
+                    PRINT
+                        IDENTIFIER (sum)
+                BLOCK
+                    PRINT
+                        IDENTIFIER (x)
+            UNARY OP (return)
+                INT (0)
+
+===== Semantic Analysis =====
+Semantic analysis successful. No errors found.
+
+Symbol Table:
+Name            Type       Scope      Line      
+--------------------------------------------------
+main            int        0          15        
+x               int        2          4         
+y               int        2          5         
+sum             int        2          6         
+
+===== Intermediate Code (TAC) =====
+main:
+    // declare x : int
+    x = 10
+    // declare y : int
+    y = 20
+    // declare sum : int
+    t0 = x + y
+    sum = t0
+    t1 = sum > 20
+    ifFalse t1 goto L0
+    print sum
+    goto L1
+L0:
+    print x
+L1:
+
+===== Code Optimization =====
+Constant folding + constant propagation applied (15 -> 15 TAC lines):
+
+main:
+    // declare x : int
+    x = 10
+    // declare y : int
+    y = 20
+    // declare sum : int
+    t0 = x + y
+    sum = t0
+    t1 = sum > 20
+    ifFalse t1 goto L0
+    print sum
+    goto L1
+L0:
+    print x
+L1:
+
+===== Target Code Generation (Assembly) =====
+SECTION .text
+GLOBAL _main
+
+_main:
+    PUSH EBP
+    MOV EBP, ESP
+
+main:
+    ; declare x : int
+    MOV EAX, 10
+    MOV [x], EAX
+    ; declare y : int
+    MOV EAX, 20
+    MOV [y], EAX
+    ; declare sum : int
+    MOV EAX, x
+    ADD EAX, y
+    MOV [t0], EAX
+    MOV EAX, t0
+    MOV [sum], EAX
+    MOV EAX, sum
+    CMP EAX, 20
+    SETG AL
+    MOV [t1], AL
+    CMP t1, 0
+    JE L0
+    MOV EAX, sum
+    CALL PRINT_VALUE
+    JMP L1
+L0:
+    MOV EAX, x
+    CALL PRINT_VALUE
+L1:
+
+    MOV ESP, EBP
+    POP EBP
+    RET
+exit code: 0

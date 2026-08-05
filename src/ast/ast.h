@@ -5,6 +5,12 @@ typedef enum
 {
     /* Program Structure */
     NODE_PROGRAM,
+    
+    NODE_CLASS,
+    NODE_FUNCTION,
+
+
+
 
     /* Statements */
     NODE_BLOCK,

@@ -47,6 +47,23 @@ void print_ast(ASTNode *node, int level)
                 printf("PROGRAM\n");
                 break;
 
+            // +++++ CHANGED HERE +++++
+            case NODE_CLASS:
+                printf(
+                    "CLASS (%s)\n",
+                    node->text ? node->text : ""
+                );
+                break;
+
+            case NODE_FUNCTION:
+                printf(
+                    "FUNCTION (%s : %s)\n",
+                    node->text ? node->text : "",
+                    node->data_type ? node->data_type : "void"
+                );
+                break;
+            // ----- END CHANGE -----
+
             case NODE_BLOCK:
                 printf("BLOCK\n");
                 break;

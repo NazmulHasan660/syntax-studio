@@ -191,6 +191,35 @@ static void generate_statement(
 
     switch (statement->type)
     {
+      
+        case NODE_CLASS:
+        {
+            generate_statement_list(
+                statement->left,
+                list
+            );
+            break;
+        }
+
+        case NODE_FUNCTION:
+        {
+            emit_tac(
+                list,
+                "%s:",
+                statement->text
+            );
+
+            if (statement->left != NULL)
+            {
+                generate_statement(
+                    statement->left,
+                    list
+                );
+            }
+            break;
+        }
+     
+
         case NODE_DECLARATION:
         {
             emit_tac(
@@ -504,10 +533,6 @@ static void generate_statement(
             break;
         }
 
-        /*
-         * Return instructions are ignored in this
-         * educational TAC subset.
-         */
         case NODE_UNARY_OP:
         default:
             break;
@@ -551,13 +576,6 @@ void print_tac(const TACList *list)
 
     for (int i = 0; i < list->count; i++)
     {
-        /*
-         * Labels are printed without indentation. A label line is
-         * a single token ending in ':' (e.g. "L0:"). Checking for
-         * ':' anywhere in the line is not enough -- a print
-         * statement whose string literal contains a colon (e.g.
-         * print "Score:") would be misdetected as a label.
-         */
         size_t length = strlen(list->lines[i]);
 
         int is_label =

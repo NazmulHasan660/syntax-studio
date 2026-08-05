@@ -29,6 +29,14 @@ int syntax_error_count = 0;
 
 %type <node> Program
 %type <node> OuterDeclarations
+// +++++ CHANGED HERE +++++
+%type <node> TopLevelItem
+%type <node> ClassDeclaration
+%type <node> FunctionDefinition
+%type <node> ParamList
+%type <node> ParamListItems
+%type <node> ParamItem
+// ----- END CHANGE -----
 %type <node> StatementList
 %type <node> Statement
 %type <node> Block
@@ -49,7 +57,9 @@ int syntax_error_count = 0;
 %type <node> ExpressionList
 %type <sval> Type
 
-%token INT FLOAT BOOL
+// +++++ CHANGED HERE +++++
+%token INT FLOAT BOOL VOID CLASS STRING_TYPE CHAR
+// ----- END CHANGE -----
 %token IF ELSE WHILE FOR DO PRINT PRINT_CALL COUT RETURN
 %token TRUE FALSE
 
@@ -64,6 +74,9 @@ int syntax_error_count = 0;
 
 %token LPAREN RPAREN
 %token LBRACE RBRACE
+
+%token LBRACKET RBRACKET
+
 %token SEMICOLON COMMA
 
 %left OR
@@ -98,7 +111,7 @@ OuterDeclarations
     {
         $$ = NULL;
     }
-    | OuterDeclarations Statement
+    | OuterDeclarations TopLevelItem
     {
         if ($1 == NULL)
         {
@@ -116,6 +129,122 @@ OuterDeclarations
         }
     }
     ;
+
+TopLevelItem
+    : ClassDeclaration
+    {
+        $$ = $1;
+    }
+    | FunctionDefinition
+    {
+        $$ = $1;
+    }
+    | Statement
+    {
+        $$ = $1;
+    }
+    ;
+
+ClassDeclaration
+    : CLASS ID LBRACE OuterDeclarations RBRACE
+    {
+        $$ = create_node(NODE_CLASS, $2);
+        $$->left = $4;
+        free($2);
+    }
+    ;
+
+FunctionDefinition
+    : Type ID LPAREN ParamList RPAREN Block
+    {
+        $$ = create_node(NODE_FUNCTION, $2);
+        $$->data_type = strdup($1);
+        $$->left = $6;
+        free($1);
+        free($2);
+    }
+    ;
+
+ParamList
+    : %empty
+    {
+        $$ = NULL;
+    }
+    | ParamListItems
+    {
+        $$ = $1;
+    }
+    ;
+
+ParamListItems
+    : ParamItem
+    {
+        $$ = $1;
+    }
+    | ParamListItems COMMA ParamItem
+    {
+        if ($1 == NULL)
+        {
+            $$ = $3;
+        }
+        else
+        {
+            ASTNode *temp = $1;
+
+            while (temp->next != NULL)
+                temp = temp->next;
+
+            temp->next = $3;
+            $$ = $1;
+        }
+    }
+    ;
+
+ParamItem
+    : Type ID
+    {
+        $$ = NULL;
+        free($1);
+        free($2);
+    }
+    | Type ID LBRACKET RBRACKET
+    {
+        $$ = NULL;
+        free($1);
+        free($2);
+    }
+    | STRING_TYPE LBRACKET RBRACKET ID
+    {
+        $$ = NULL;
+        free($4);
+    }
+    | STRING_TYPE ID LBRACKET RBRACKET
+    {
+        $$ = NULL;
+        free($2);
+    }
+    | CHAR MUL ID
+    {
+        $$ = NULL;
+        free($3);
+    }
+    | CHAR MUL MUL ID
+    {
+        $$ = NULL;
+        free($4);
+    }
+    | VOID
+    {
+        $$ = NULL;
+    }
+    | ID ID
+    {
+        $$ = NULL;
+        free($1);
+        free($2);
+    }
+    ;
+
 
 StatementList
     : StatementList Statement
@@ -296,6 +425,7 @@ DeclItem
     }
     ;
 
+// +++++ CHANGED HERE +++++
 Type
     : INT
     {
@@ -309,7 +439,12 @@ Type
     {
         $$ = strdup("bool");
     }
+    | VOID
+    {
+        $$ = strdup("void");
+    }
     ;
+// ----- END CHANGE -----
 
 Assignment
     : ID ASSIGN Expression SEMICOLON

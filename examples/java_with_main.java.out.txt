@@ -1,0 +1,176 @@
+
+===== Lexical Analysis =====
+Language: Java
+Line  Token                 Lexeme
+------------------------------------------------------------
+[001] TOKEN: MODIFIER             LEXEME: 'public' (ignored)
+[001] TOKEN: CLASS                LEXEME: 'class'
+[001] TOKEN: ID                   LEXEME: 'JavaMainTest'
+[001] TOKEN: LBRACE               LEXEME: '{'
+[002] TOKEN: MODIFIER             LEXEME: 'public' (ignored)
+[002] TOKEN: MODIFIER             LEXEME: 'static' (ignored)
+[002] TOKEN: VOID                 LEXEME: 'void'
+[002] TOKEN: ID                   LEXEME: 'main'
+[002] TOKEN: LPAREN               LEXEME: '('
+[002] TOKEN: STRING_TYPE          LEXEME: 'String'
+[002] TOKEN: LBRACKET             LEXEME: '['
+[002] TOKEN: RBRACKET             LEXEME: ']'
+[002] TOKEN: ID                   LEXEME: 'args'
+[002] TOKEN: RPAREN               LEXEME: ')'
+[002] TOKEN: LBRACE               LEXEME: '{'
+[003] TOKEN: INT                  LEXEME: 'int'
+[003] TOKEN: ID                   LEXEME: 'total'
+[003] TOKEN: ASSIGN               LEXEME: '='
+[003] TOKEN: INT_CONST            LEXEME: '0'
+[003] TOKEN: SEMICOLON            LEXEME: ';'
+[005] TOKEN: FOR                  LEXEME: 'for'
+[005] TOKEN: LPAREN               LEXEME: '('
+[005] TOKEN: INT                  LEXEME: 'int'
+[005] TOKEN: ID                   LEXEME: 'i'
+[005] TOKEN: ASSIGN               LEXEME: '='
+[005] TOKEN: INT_CONST            LEXEME: '1'
+[005] TOKEN: SEMICOLON            LEXEME: ';'
+[005] TOKEN: ID                   LEXEME: 'i'
+[005] TOKEN: LE                   LEXEME: '<='
+[005] TOKEN: INT_CONST            LEXEME: '3'
+[005] TOKEN: SEMICOLON            LEXEME: ';'
+[005] TOKEN: ID                   LEXEME: 'i'
+[005] TOKEN: INC                  LEXEME: '++'
+[005] TOKEN: RPAREN               LEXEME: ')'
+[005] TOKEN: LBRACE               LEXEME: '{'
+[006] TOKEN: ID                   LEXEME: 'total'
+[006] TOKEN: ASSIGN               LEXEME: '='
+[006] TOKEN: ID                   LEXEME: 'total'
+[006] TOKEN: PLUS                 LEXEME: '+'
+[006] TOKEN: ID                   LEXEME: 'i'
+[006] TOKEN: SEMICOLON            LEXEME: ';'
+[007] TOKEN: PRINT_CALL           LEXEME: 'System.out.println'
+[007] TOKEN: LPAREN               LEXEME: '('
+[007] TOKEN: ID                   LEXEME: 'total'
+[007] TOKEN: RPAREN               LEXEME: ')'
+[007] TOKEN: SEMICOLON            LEXEME: ';'
+[008] TOKEN: RBRACE               LEXEME: '}'
+[009] TOKEN: RBRACE               LEXEME: '}'
+[010] TOKEN: RBRACE               LEXEME: '}'
+------------------------------------------------------------
+Total parser tokens: 46
+Lexical Analysis: SUCCESS (no lexical errors)
+
+===== Parser (AST) =====
+Parsing successful.
+
+Abstract Syntax Tree:
+PROGRAM
+    CLASS (JavaMainTest)
+        FUNCTION (main : void)
+            BLOCK
+                DECLARATION (total : int)
+                ASSIGNMENT (total)
+                    INT (0)
+                BLOCK
+                    DECLARATION (i : int)
+                    ASSIGNMENT (i)
+                        INT (1)
+                    FOR
+                        BINARY OP (<=)
+                            IDENTIFIER (i)
+                            INT (3)
+                        BLOCK
+                            ASSIGNMENT (total)
+                                BINARY OP (+)
+                                    IDENTIFIER (total)
+                                    IDENTIFIER (i)
+                            PRINT
+                                IDENTIFIER (total)
+                        ASSIGNMENT (i)
+                            BINARY OP (+)
+                                IDENTIFIER (i)
+                                INT (1)
+
+===== Semantic Analysis =====
+Semantic analysis successful. No errors found.
+
+Symbol Table:
+Name            Type       Scope      Line      
+--------------------------------------------------
+main            void       1          9         
+total           int        3          3         
+i               int        4          5         
+
+===== Intermediate Code (TAC) =====
+main:
+    // declare total : int
+    total = 0
+    // declare i : int
+    i = 1
+L0:
+    t0 = i <= 3
+    ifFalse t0 goto L1
+    t1 = total + i
+    total = t1
+    print total
+    t2 = i + 1
+    i = t2
+    goto L0
+L1:
+
+===== Code Optimization =====
+Constant folding + constant propagation applied (15 -> 15 TAC lines):
+
+main:
+    // declare total : int
+    total = 0
+    // declare i : int
+    i = 1
+L0:
+    t0 = i <= 3
+    ifFalse t0 goto L1
+    t1 = total + i
+    total = t1
+    print total
+    t2 = i + 1
+    i = t2
+    goto L0
+L1:
+
+===== Target Code Generation (Assembly) =====
+SECTION .text
+GLOBAL _main
+
+_main:
+    PUSH EBP
+    MOV EBP, ESP
+
+main:
+    ; declare total : int
+    MOV EAX, 0
+    MOV [total], EAX
+    ; declare i : int
+    MOV EAX, 1
+    MOV [i], EAX
+L0:
+    MOV EAX, i
+    CMP EAX, 3
+    SETLE AL
+    MOV [t0], AL
+    CMP t0, 0
+    JE L1
+    MOV EAX, total
+    ADD EAX, i
+    MOV [t1], EAX
+    MOV EAX, t1
+    MOV [total], EAX
+    MOV EAX, total
+    CALL PRINT_VALUE
+    MOV EAX, i
+    ADD EAX, 1
+    MOV [t2], EAX
+    MOV EAX, t2
+    MOV [i], EAX
+    JMP L0
+L1:
+
+    MOV ESP, EBP
+    POP EBP
+    RET
+exit code: 0

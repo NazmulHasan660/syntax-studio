@@ -304,6 +304,36 @@ static void analyze_statement(ASTNode *statement)
 
     switch (statement->type)
     {
+        // +++++ CHANGED HERE +++++
+        case NODE_CLASS:
+        {
+            symtab_enter_scope();
+
+            if (statement->left != NULL)
+                analyze_statement_list(statement->left);
+
+            symtab_exit_scope();
+            break;
+        }
+
+        case NODE_FUNCTION:
+        {
+            symtab_insert(
+                statement->text,
+                statement->data_type,
+                statement->line
+            );
+
+            symtab_enter_scope();
+
+            if (statement->left != NULL)
+                analyze_statement(statement->left);
+
+            symtab_exit_scope();
+            break;
+        }
+        // ----- END CHANGE -----
+
         case NODE_DECLARATION:
         {
             int inserted = symtab_insert(
@@ -345,9 +375,6 @@ static void analyze_statement(ASTNode *statement)
                 strcmp(symbol->type, right_type) != 0
             )
             {
-                /*
-                 * int value can be assigned to float.
-                 */
                 int is_widening =
                     strcmp(symbol->type, "float") == 0 &&
                     strcmp(right_type, "int") == 0;
@@ -484,10 +511,6 @@ static void analyze_statement(ASTNode *statement)
             break;
         }
 
-        /*
-         * Return nodes are accepted by the educational parser.
-         * Return-type checking is outside this compiler subset.
-         */
         case NODE_UNARY_OP:
         default:
             break;
@@ -520,9 +543,5 @@ int analyze_semantics(ASTNode *root)
         analyze_statement_list(root->left);
     }
 
-    /*
-     * Do not free the symbol table here.
-     * main.c will print it as Phase 5 and then free it.
-     */
     return error_count;
 }

@@ -1,14 +1,4 @@
 #!/usr/bin/env bash
-#
-# Runs every .src file under tests/, saves its combined stdout+stderr
-# (plus exit code) next to it as <name>.out.txt, and prints a summary.
-#
-# Usage:
-#   ./tests/run_all.sh
-#
-# Run this from the project root (same folder as the Makefile).
-# The generated *.out.txt files are what "Sample Output" /
-# "expected vs actual output" in the project report should point to.
 
 set -u
 
@@ -23,12 +13,14 @@ fi
 pass=0
 fail=0
 
-# tests/valid/*.src   -> must exit 0 (successful compilation)
-# tests/invalid/**/*.src -> must exit non-zero (error correctly detected)
 run_one () {
     local src="$1"
     local expect_success="$2"
-    local out="${src%.src}.out.txt"
+
+    local out="${src}.out.txt"
+    if [[ "$src" == *.src || "$src" == *.c ]]; then
+        out="${src%.*}.out.txt"
+    fi
 
     ./compiler "$src" > "$out" 2>&1
     local rc=$?
@@ -47,14 +39,20 @@ run_one () {
 }
 
 echo "=== valid/ (expect exit 0) ==="
-for f in tests/valid/*.src tests/valid/*.cpp tests/valid/*.java; do
-    run_one "$f" "yes"
+for f in tests/valid/*.src tests/valid/*.cpp tests/valid/*.java tests/valid/*.c; do
+    [ -f "$f" ] && run_one "$f" "yes"
+done
+
+echo
+echo "=== examples/ (expect exit 0) ==="
+for f in examples/*.c examples/*.cpp examples/*.java examples/*.src; do
+    [ -f "$f" ] && run_one "$f" "yes"
 done
 
 echo
 echo "=== invalid/ (expect non-zero exit) ==="
 for f in tests/invalid/lexical/*.src tests/invalid/syntax/*.src tests/invalid/semantic/*.src; do
-    run_one "$f" "no"
+    [ -f "$f" ] && run_one "$f" "no"
 done
 
 echo

@@ -38,6 +38,13 @@ NEWLINE         \n
 "final"     { if (dump_tokens) printf("[%03d] TOKEN: MODIFIER             LEXEME: '%s' (ignored)\n", line_number, yytext); }
 "const"     { if (dump_tokens) printf("[%03d] TOKEN: MODIFIER             LEXEME: '%s' (ignored)\n", line_number, yytext); }
 
+
+"class"     { if (dump_tokens) printf("[%03d] TOKEN: CLASS                LEXEME: '%s'\n", line_number, yytext); return CLASS; }
+"void"      { if (dump_tokens) printf("[%03d] TOKEN: VOID                 LEXEME: '%s'\n", line_number, yytext); return VOID; }
+"String"    { if (dump_tokens) printf("[%03d] TOKEN: STRING_TYPE          LEXEME: '%s'\n", line_number, yytext); return STRING_TYPE; }
+"char"      { if (dump_tokens) printf("[%03d] TOKEN: CHAR                 LEXEME: '%s'\n", line_number, yytext); return CHAR; }
+
+
 "int"     { if (dump_tokens) printf("[%03d] TOKEN: INT                  LEXEME: '%s'\n", line_number, yytext); return INT; }
 "float"   { if (dump_tokens) printf("[%03d] TOKEN: FLOAT                LEXEME: '%s'\n", line_number, yytext); return FLOAT; }
 "double"  { if (dump_tokens) printf("[%03d] TOKEN: FLOAT                LEXEME: '%s'\n", line_number, yytext); return FLOAT; }
@@ -90,6 +97,11 @@ NEWLINE         \n
 
 ";" { if (dump_tokens) printf("[%03d] TOKEN: SEMICOLON            LEXEME: '%s'\n", line_number, yytext); return SEMICOLON; }
 "," { if (dump_tokens) printf("[%03d] TOKEN: COMMA                LEXEME: '%s'\n", line_number, yytext); return COMMA; }
+
+
+"[" { if (dump_tokens) printf("[%03d] TOKEN: LBRACKET             LEXEME: '%s'\n", line_number, yytext); return LBRACKET; }
+"]" { if (dump_tokens) printf("[%03d] TOKEN: RBRACKET             LEXEME: '%s'\n", line_number, yytext); return RBRACKET; }
+
 
 "(" { if (dump_tokens) printf("[%03d] TOKEN: LPAREN               LEXEME: '%s'\n", line_number, yytext); return LPAREN; }
 ")" { if (dump_tokens) printf("[%03d] TOKEN: RPAREN               LEXEME: '%s'\n", line_number, yytext); return RPAREN; }

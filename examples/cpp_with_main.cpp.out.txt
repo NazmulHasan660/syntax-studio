@@ -1,0 +1,134 @@
+
+===== Lexical Analysis =====
+Language: C++
+Line  Token                 Lexeme
+------------------------------------------------------------
+[001] TOKEN: DIRECTIVE            LEXEME: '#include <iostream>' (ignored)
+[002] TOKEN: NAMESPACE            LEXEME: 'using namespace std;' (ignored)
+[004] TOKEN: INT                  LEXEME: 'int'
+[004] TOKEN: ID                   LEXEME: 'main'
+[004] TOKEN: LPAREN               LEXEME: '('
+[004] TOKEN: RPAREN               LEXEME: ')'
+[004] TOKEN: LBRACE               LEXEME: '{'
+[005] TOKEN: INT                  LEXEME: 'int'
+[005] TOKEN: ID                   LEXEME: 'count'
+[005] TOKEN: ASSIGN               LEXEME: '='
+[005] TOKEN: INT_CONST            LEXEME: '0'
+[005] TOKEN: SEMICOLON            LEXEME: ';'
+[007] TOKEN: WHILE                LEXEME: 'while'
+[007] TOKEN: LPAREN               LEXEME: '('
+[007] TOKEN: ID                   LEXEME: 'count'
+[007] TOKEN: LT                   LEXEME: '<'
+[007] TOKEN: INT_CONST            LEXEME: '3'
+[007] TOKEN: RPAREN               LEXEME: ')'
+[007] TOKEN: LBRACE               LEXEME: '{'
+[008] TOKEN: COUT                 LEXEME: 'cout'
+[008] TOKEN: LSHIFT               LEXEME: '<<'
+[008] TOKEN: ID                   LEXEME: 'count'
+[008] TOKEN: SEMICOLON            LEXEME: ';'
+[009] TOKEN: ID                   LEXEME: 'count'
+[009] TOKEN: INC                  LEXEME: '++'
+[009] TOKEN: SEMICOLON            LEXEME: ';'
+[010] TOKEN: RBRACE               LEXEME: '}'
+[012] TOKEN: RETURN               LEXEME: 'return'
+[012] TOKEN: INT_CONST            LEXEME: '0'
+[012] TOKEN: SEMICOLON            LEXEME: ';'
+[013] TOKEN: RBRACE               LEXEME: '}'
+------------------------------------------------------------
+Total parser tokens: 29
+Lexical Analysis: SUCCESS (no lexical errors)
+
+===== Parser (AST) =====
+Parsing successful.
+
+Abstract Syntax Tree:
+PROGRAM
+    FUNCTION (main : int)
+        BLOCK
+            DECLARATION (count : int)
+            ASSIGNMENT (count)
+                INT (0)
+            WHILE
+                BINARY OP (<)
+                    IDENTIFIER (count)
+                    INT (3)
+                BLOCK
+                    PRINT
+                        IDENTIFIER (count)
+                    ASSIGNMENT (count)
+                        BINARY OP (+)
+                            IDENTIFIER (count)
+                            INT (1)
+            UNARY OP (return)
+                INT (0)
+
+===== Semantic Analysis =====
+Semantic analysis successful. No errors found.
+
+Symbol Table:
+Name            Type       Scope      Line      
+--------------------------------------------------
+main            int        0          13        
+count           int        2          5         
+
+===== Intermediate Code (TAC) =====
+main:
+    // declare count : int
+    count = 0
+L0:
+    t0 = count < 3
+    ifFalse t0 goto L1
+    print count
+    t1 = count + 1
+    count = t1
+    goto L0
+L1:
+
+===== Code Optimization =====
+Constant folding + constant propagation applied (11 -> 11 TAC lines):
+
+main:
+    // declare count : int
+    count = 0
+L0:
+    t0 = count < 3
+    ifFalse t0 goto L1
+    print count
+    t1 = count + 1
+    count = t1
+    goto L0
+L1:
+
+===== Target Code Generation (Assembly) =====
+SECTION .text
+GLOBAL _main
+
+_main:
+    PUSH EBP
+    MOV EBP, ESP
+
+main:
+    ; declare count : int
+    MOV EAX, 0
+    MOV [count], EAX
+L0:
+    MOV EAX, count
+    CMP EAX, 3
+    SETL AL
+    MOV [t0], AL
+    CMP t0, 0
+    JE L1
+    MOV EAX, count
+    CALL PRINT_VALUE
+    MOV EAX, count
+    ADD EAX, 1
+    MOV [t1], EAX
+    MOV EAX, t1
+    MOV [count], EAX
+    JMP L0
+L1:
+
+    MOV ESP, EBP
+    POP EBP
+    RET
+exit code: 0
