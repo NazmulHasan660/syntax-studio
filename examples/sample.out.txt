@@ -1,0 +1,408 @@
+
+===== Lexical Analysis =====
+Language: Mini/C
+Line  Token                 Lexeme
+------------------------------------------------------------
+[006] TOKEN: INT                  LEXEME: 'int'
+[006] TOKEN: ID                   LEXEME: 'a'
+[006] TOKEN: SEMICOLON            LEXEME: ';'
+[007] TOKEN: INT                  LEXEME: 'int'
+[007] TOKEN: ID                   LEXEME: 'b'
+[007] TOKEN: SEMICOLON            LEXEME: ';'
+[008] TOKEN: FLOAT                LEXEME: 'float'
+[008] TOKEN: ID                   LEXEME: 'avg'
+[008] TOKEN: SEMICOLON            LEXEME: ';'
+[009] TOKEN: BOOL                 LEXEME: 'bool'
+[009] TOKEN: ID                   LEXEME: 'valid'
+[009] TOKEN: SEMICOLON            LEXEME: ';'
+[011] TOKEN: ID                   LEXEME: 'a'
+[011] TOKEN: ASSIGN               LEXEME: '='
+[011] TOKEN: INT_CONST            LEXEME: '12'
+[011] TOKEN: SEMICOLON            LEXEME: ';'
+[012] TOKEN: ID                   LEXEME: 'b'
+[012] TOKEN: ASSIGN               LEXEME: '='
+[012] TOKEN: INT_CONST            LEXEME: '5'
+[012] TOKEN: SEMICOLON            LEXEME: ';'
+[013] TOKEN: ID                   LEXEME: 'valid'
+[013] TOKEN: ASSIGN               LEXEME: '='
+[013] TOKEN: TRUE                 LEXEME: 'true'
+[013] TOKEN: SEMICOLON            LEXEME: ';'
+[016] TOKEN: INT                  LEXEME: 'int'
+[016] TOKEN: ID                   LEXEME: 'total'
+[016] TOKEN: SEMICOLON            LEXEME: ';'
+[017] TOKEN: ID                   LEXEME: 'total'
+[017] TOKEN: ASSIGN               LEXEME: '='
+[017] TOKEN: ID                   LEXEME: 'a'
+[017] TOKEN: PLUS                 LEXEME: '+'
+[017] TOKEN: ID                   LEXEME: 'b'
+[017] TOKEN: MUL                  LEXEME: '*'
+[017] TOKEN: INT_CONST            LEXEME: '2'
+[017] TOKEN: SEMICOLON            LEXEME: ';'
+[019] TOKEN: IF                   LEXEME: 'if'
+[019] TOKEN: LPAREN               LEXEME: '('
+[019] TOKEN: ID                   LEXEME: 'total'
+[019] TOKEN: GT                   LEXEME: '>'
+[019] TOKEN: INT_CONST            LEXEME: '15'
+[019] TOKEN: AND                  LEXEME: '&&'
+[019] TOKEN: ID                   LEXEME: 'valid'
+[019] TOKEN: RPAREN               LEXEME: ')'
+[019] TOKEN: LBRACE               LEXEME: '{'
+[020] TOKEN: PRINT                LEXEME: 'print'
+[020] TOKEN: ID                   LEXEME: 'total'
+[020] TOKEN: SEMICOLON            LEXEME: ';'
+[021] TOKEN: RBRACE               LEXEME: '}'
+[021] TOKEN: ELSE                 LEXEME: 'else'
+[021] TOKEN: LBRACE               LEXEME: '{'
+[022] TOKEN: PRINT                LEXEME: 'print'
+[022] TOKEN: ID                   LEXEME: 'a'
+[022] TOKEN: SEMICOLON            LEXEME: ';'
+[023] TOKEN: RBRACE               LEXEME: '}'
+[025] TOKEN: INT                  LEXEME: 'int'
+[025] TOKEN: ID                   LEXEME: 'i'
+[025] TOKEN: SEMICOLON            LEXEME: ';'
+[026] TOKEN: ID                   LEXEME: 'i'
+[026] TOKEN: ASSIGN               LEXEME: '='
+[026] TOKEN: INT_CONST            LEXEME: '0'
+[026] TOKEN: SEMICOLON            LEXEME: ';'
+[028] TOKEN: WHILE                LEXEME: 'while'
+[028] TOKEN: LPAREN               LEXEME: '('
+[028] TOKEN: ID                   LEXEME: 'i'
+[028] TOKEN: LT                   LEXEME: '<'
+[028] TOKEN: INT_CONST            LEXEME: '3'
+[028] TOKEN: RPAREN               LEXEME: ')'
+[028] TOKEN: LBRACE               LEXEME: '{'
+[029] TOKEN: INT                  LEXEME: 'int'
+[029] TOKEN: ID                   LEXEME: 'square'
+[029] TOKEN: SEMICOLON            LEXEME: ';'
+[030] TOKEN: ID                   LEXEME: 'square'
+[030] TOKEN: ASSIGN               LEXEME: '='
+[030] TOKEN: ID                   LEXEME: 'i'
+[030] TOKEN: MUL                  LEXEME: '*'
+[030] TOKEN: ID                   LEXEME: 'i'
+[030] TOKEN: SEMICOLON            LEXEME: ';'
+[031] TOKEN: PRINT                LEXEME: 'print'
+[031] TOKEN: ID                   LEXEME: 'square'
+[031] TOKEN: SEMICOLON            LEXEME: ';'
+[032] TOKEN: ID                   LEXEME: 'i'
+[032] TOKEN: ASSIGN               LEXEME: '='
+[032] TOKEN: ID                   LEXEME: 'i'
+[032] TOKEN: PLUS                 LEXEME: '+'
+[032] TOKEN: INT_CONST            LEXEME: '1'
+[032] TOKEN: SEMICOLON            LEXEME: ';'
+[033] TOKEN: RBRACE               LEXEME: '}'
+[035] TOKEN: ID                   LEXEME: 'avg'
+[035] TOKEN: ASSIGN               LEXEME: '='
+[035] TOKEN: LPAREN               LEXEME: '('
+[035] TOKEN: ID                   LEXEME: 'a'
+[035] TOKEN: PLUS                 LEXEME: '+'
+[035] TOKEN: ID                   LEXEME: 'b'
+[035] TOKEN: RPAREN               LEXEME: ')'
+[035] TOKEN: DIV                  LEXEME: '/'
+[035] TOKEN: INT_CONST            LEXEME: '2'
+[035] TOKEN: SEMICOLON            LEXEME: ';'
+[037] TOKEN: IF                   LEXEME: 'if'
+[037] TOKEN: LPAREN               LEXEME: '('
+[037] TOKEN: NOT                  LEXEME: '!'
+[037] TOKEN: ID                   LEXEME: 'valid'
+[037] TOKEN: OR                   LEXEME: '||'
+[037] TOKEN: ID                   LEXEME: 'avg'
+[037] TOKEN: EQ                   LEXEME: '=='
+[037] TOKEN: INT_CONST            LEXEME: '0'
+[037] TOKEN: RPAREN               LEXEME: ')'
+[037] TOKEN: LBRACE               LEXEME: '{'
+[038] TOKEN: PRINT                LEXEME: 'print'
+[038] TOKEN: ID                   LEXEME: 'avg'
+[038] TOKEN: SEMICOLON            LEXEME: ';'
+[039] TOKEN: RBRACE               LEXEME: '}'
+[039] TOKEN: ELSE                 LEXEME: 'else'
+[039] TOKEN: LBRACE               LEXEME: '{'
+[040] TOKEN: PRINT                LEXEME: 'print'
+[040] TOKEN: ID                   LEXEME: 'b'
+[040] TOKEN: SEMICOLON            LEXEME: ';'
+[041] TOKEN: RBRACE               LEXEME: '}'
+------------------------------------------------------------
+Total parser tokens: 117
+Lexical Analysis: SUCCESS (no lexical errors)
+
+===== Parser (AST) =====
+Parsing successful.
+
+Abstract Syntax Tree:
+PROGRAM
+    DECLARATION (a : int)
+    DECLARATION (b : int)
+    DECLARATION (avg : float)
+    DECLARATION (valid : bool)
+    ASSIGNMENT (a)
+        INT (12)
+    ASSIGNMENT (b)
+        INT (5)
+    ASSIGNMENT (valid)
+        BOOL (true)
+    DECLARATION (total : int)
+    ASSIGNMENT (total)
+        BINARY OP (+)
+            IDENTIFIER (a)
+            BINARY OP (*)
+                IDENTIFIER (b)
+                INT (2)
+    IF
+        BINARY OP (&&)
+            BINARY OP (>)
+                IDENTIFIER (total)
+                INT (15)
+            IDENTIFIER (valid)
+        BLOCK
+            PRINT
+                IDENTIFIER (total)
+        BLOCK
+            PRINT
+                IDENTIFIER (a)
+    DECLARATION (i : int)
+    ASSIGNMENT (i)
+        INT (0)
+    WHILE
+        BINARY OP (<)
+            IDENTIFIER (i)
+            INT (3)
+        BLOCK
+            DECLARATION (square : int)
+            ASSIGNMENT (square)
+                BINARY OP (*)
+                    IDENTIFIER (i)
+                    IDENTIFIER (i)
+            PRINT
+                IDENTIFIER (square)
+            ASSIGNMENT (i)
+                BINARY OP (+)
+                    IDENTIFIER (i)
+                    INT (1)
+    ASSIGNMENT (avg)
+        BINARY OP (/)
+            BINARY OP (+)
+                IDENTIFIER (a)
+                IDENTIFIER (b)
+            INT (2)
+    IF
+        BINARY OP (||)
+            UNARY OP (!)
+                IDENTIFIER (valid)
+            BINARY OP (==)
+                IDENTIFIER (avg)
+                INT (0)
+        BLOCK
+            PRINT
+                IDENTIFIER (avg)
+        BLOCK
+            PRINT
+                IDENTIFIER (b)
+
+===== Semantic Analysis =====
+Semantic analysis successful. No errors found.
+
+Symbol Table:
+Name            Type       Scope      Line      
+--------------------------------------------------
+a               int        0          6         
+b               int        0          7         
+avg             float      0          8         
+valid           bool       0          9         
+total           int        0          16        
+i               int        0          25        
+square          int        1          29        
+
+===== Intermediate Code (TAC) =====
+    // declare a : int
+    // declare b : int
+    // declare avg : float
+    // declare valid : bool
+    a = 12
+    b = 5
+    valid = true
+    // declare total : int
+    t0 = b * 2
+    t1 = a + t0
+    total = t1
+    t2 = total > 15
+    t3 = t2 && valid
+    ifFalse t3 goto L0
+    print total
+    goto L1
+L0:
+    print a
+L1:
+    // declare i : int
+    i = 0
+L2:
+    t4 = i < 3
+    ifFalse t4 goto L3
+    // declare square : int
+    t5 = i * i
+    square = t5
+    print square
+    t6 = i + 1
+    i = t6
+    goto L2
+L3:
+    t7 = a + b
+    t8 = t7 / 2
+    avg = t8
+    t9 = !valid
+    t10 = avg == 0
+    t11 = t9 || t10
+    ifFalse t11 goto L4
+    print avg
+    goto L5
+L4:
+    print b
+L5:
+
+===== Code Optimization =====
+Constant folding + constant propagation applied (44 -> 44 TAC lines):
+
+    // declare a : int
+    // declare b : int
+    // declare avg : float
+    // declare valid : bool
+    a = 12
+    b = 5
+    valid = true
+    // declare total : int
+    t0 = b * 2
+    t1 = a + t0
+    total = t1
+    t2 = total > 15
+    t3 = t2 && valid
+    ifFalse t3 goto L0
+    print total
+    goto L1
+L0:
+    print a
+L1:
+    // declare i : int
+    i = 0
+L2:
+    t4 = i < 3
+    ifFalse t4 goto L3
+    // declare square : int
+    t5 = i * i
+    square = t5
+    print square
+    t6 = i + 1
+    i = t6
+    goto L2
+L3:
+    t7 = a + b
+    t8 = t7 / 2
+    avg = t8
+    t9 = !valid
+    t10 = avg == 0
+    t11 = t9 || t10
+    ifFalse t11 goto L4
+    print avg
+    goto L5
+L4:
+    print b
+L5:
+
+===== Target Code Generation (Assembly) =====
+SECTION .text
+GLOBAL _main
+
+_main:
+    PUSH EBP
+    MOV EBP, ESP
+
+    ; declare a : int
+    ; declare b : int
+    ; declare avg : float
+    ; declare valid : bool
+    MOV EAX, 12
+    MOV [a], EAX
+    MOV EAX, 5
+    MOV [b], EAX
+    MOV EAX, 1
+    MOV [valid], EAX
+    ; declare total : int
+    MOV EAX, b
+    IMUL EAX, 2
+    MOV [t0], EAX
+    MOV EAX, a
+    ADD EAX, t0
+    MOV [t1], EAX
+    MOV EAX, t1
+    MOV [total], EAX
+    MOV EAX, total
+    CMP EAX, 15
+    SETG AL
+    MOV [t2], AL
+    MOV EAX, t2
+    AND EAX, valid
+    MOV [t3], EAX
+    CMP t3, 0
+    JE L0
+    MOV EAX, total
+    CALL PRINT_VALUE
+    JMP L1
+L0:
+    MOV EAX, a
+    CALL PRINT_VALUE
+L1:
+    ; declare i : int
+    MOV EAX, 0
+    MOV [i], EAX
+L2:
+    MOV EAX, i
+    CMP EAX, 3
+    SETL AL
+    MOV [t4], AL
+    CMP t4, 0
+    JE L3
+    ; declare square : int
+    MOV EAX, i
+    IMUL EAX, i
+    MOV [t5], EAX
+    MOV EAX, t5
+    MOV [square], EAX
+    MOV EAX, square
+    CALL PRINT_VALUE
+    MOV EAX, i
+    ADD EAX, 1
+    MOV [t6], EAX
+    MOV EAX, t6
+    MOV [i], EAX
+    JMP L2
+L3:
+    MOV EAX, a
+    ADD EAX, b
+    MOV [t7], EAX
+    MOV EAX, t7
+    CDQ
+    IDIV 2
+    MOV [t8], EAX
+    MOV EAX, t8
+    MOV [avg], EAX
+    MOV EAX, valid
+    XOR EAX, 1
+    MOV [t9], EAX
+    MOV EAX, avg
+    CMP EAX, 0
+    SETE AL
+    MOV [t10], AL
+    MOV EAX, t9
+    OR EAX, t10
+    MOV [t11], EAX
+    CMP t11, 0
+    JE L4
+    MOV EAX, avg
+    CALL PRINT_VALUE
+    JMP L5
+L4:
+    MOV EAX, b
+    CALL PRINT_VALUE
+L5:
+
+    MOV ESP, EBP
+    POP EBP
+    RET
+exit code: 0

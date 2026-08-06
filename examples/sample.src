@@ -1,0 +1,41 @@
+// Official sample program for Syntax Studio.
+// Demonstrates every fixed-core-language construct required by the manual:
+// declarations, assignment, arithmetic/relational/logical expressions,
+// if-else, while, nested block scoping, and print.
+
+int a;
+int b;
+float avg;
+bool valid;
+
+a = 12;
+b = 5;
+valid = true;
+
+// Arithmetic with precedence: * before +
+int total;
+total = a + b * 2;
+
+if (total > 15 && valid) {
+    print total;
+} else {
+    print a;
+}
+
+int i;
+i = 0;
+
+while (i < 3) {
+    int square;
+    square = i * i;
+    print square;
+    i = i + 1;
+}
+
+avg = (a + b) / 2;
+
+if (!valid || avg == 0) {
+    print avg;
+} else {
+    print b;
+}
