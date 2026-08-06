@@ -274,7 +274,7 @@ Detailed documentation is available in the **docs/** directory.
 
 # 🧪 Testing
 
-The compiler has been tested using **23 test cases**.
+The compiler has been tested using **24 test cases**.
 
 | Category | Status |
 |----------|--------|
@@ -284,7 +284,7 @@ The compiler has been tested using **23 test cases**.
 ### Overall Result
 
 ```text
-23 Passed
+24 Passed
 0 Failed
 ```
 

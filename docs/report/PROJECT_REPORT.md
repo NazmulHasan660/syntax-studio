@@ -441,7 +441,7 @@ Optimizations
 
 # 16. Testing
 
-The compiler was tested using **23 programs**.
+The compiler was tested using **24 programs**.
 
 ## Valid Programs
 
@@ -451,6 +451,7 @@ The compiler was tested using **23 programs**.
 - Loops
 - C++
 - Java
+- Official Sample Program
 
 **Result**
 
@@ -480,7 +481,7 @@ PASS
 ### Final Summary
 
 ```text
-23 Passed
+24 Passed
 0 Failed
 ```
 
